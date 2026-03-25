@@ -5,33 +5,34 @@ import ProductType from "./ProductType";
 
 function Admin() {
   const user = JSON.parse(localStorage.getItem("user"));
-
   const [users, setUsers] = useState([]);
   const [typeCounts, setTypeCounts] = useState([]);
   const [page, setPage] = useState("users");
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState(2);
-  const [products, setProducts] = useState([]); 
-
+  const [products, setProducts] = useState([]);
 
   const fetchProducts = async () => {
-  try {
-    const res = await axios.get("http://localhost:5000/api/products");
-    setProducts(res.data);
-  } catch (err) {
-    console.error("Fetch products error:", err);
-  }
-};
+    try {
+      const res = await axios.get("http://localhost:5000/api/products");
+      console.log("ข้อมูลสินค้าที่ดึงมาได้:", res.data); // เพิ่มบรรทัดนี้
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
   useEffect(() => {
-  if (!user || user.role_id !== 1) {
-    window.location.href = "/";
-    return;
-  }
-  fetchUsers();
-  fetchTypeCounts();
-  fetchProducts(); // <-- เพิ่มบรรทัดนี้ครับ!
-}, []);
+    if (!user || user.role_id !== 1) {
+      window.location.href = "/";
+      return;
+    }
+    fetchUsers();
+    fetchTypeCounts();
+    fetchProducts();
+  }, []);
+
   const fetchUsers = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/users");
@@ -92,12 +93,11 @@ function Admin() {
       alert("เปลี่ยน Role ไม่สำเร็จ");
     }
   };
+
   return (
     <div className="bg-light min-vh-100">
       <AdminNavbar user={user} setPage={setPage} />
-
       <div className="container mt-4">
-
         {/* ================= 1. หน้าจัดการผู้ใช้ ================= */}
         {page === "users" && (
           <>
@@ -130,10 +130,7 @@ function Admin() {
                           </select>
                         </td>
                         <td>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(u.user_id)}
-                          >ลบ</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(u.user_id)}>ลบ</button>
                         </td>
                       </tr>
                     ))
@@ -145,8 +142,6 @@ function Admin() {
                 </tbody>
               </table>
             </div>
-
-            {/* ส่วนเพิ่มผู้ใช้ */}
             <div className="card p-3 mt-4 shadow-sm border-0">
               <h5>เพิ่มผู้ใช้ใหม่</h5>
               <div className="row g-2">
@@ -178,46 +173,39 @@ function Admin() {
               <button className="btn btn-success">+ เพิ่มสินค้าใหม่</button>
             </div>
 
-            {/* แสดงสินค้าในรูปแบบ Grid Card */}
-            <div className="row row-cols-1 row-cols-md-3 g-4">
-              {products?.length > 0 ? (
-                products.map((p) => (
-                  <div className="col" key={p.product_id}>
-                    <div className="card h-100 shadow-sm border-0">
-                      {/* ส่วนรูปภาพสินค้า */}
-                      <div className="text-center p-3" style={{ background: '#f8f9fa', borderRadius: '10px 10px 0 0' }}>
-                        <img
-                          src={p.product_img ? `http://localhost:5000/images/${p.product_img}` : "https://via.placeholder.com/150"}
-                          className="img-fluid"
-                          alt={p.product_name}
-                          style={{ maxHeight: '180px', objectFit: 'contain' }}
-                        />
-                      </div>
+            <div className="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+              {products.map((p) => (
+                <div className="col" key={p.product_id}>
+                  <div className="card h-100 shadow-sm border-0">
+                    {/* พื้นที่แสดงรูปภาพ */}
+                    <div className="text-center p-3" style={{ background: '#f8f9fa', height: '200px' }}>
+                      <img
+                        // ตรงนี้สำคัญมาก: ต้องดึงชื่อไฟล์จาก p.product_img มาต่อท้าย URL ของ Backend
+                        src={`http://localhost:5000/images/${p.product_img}`}
+                        className="img-fluid h-100"
+                        alt={p.product_name}
+                        style={{ objectFit: 'contain' }}
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/150?text=No+Image"; // ถ้าหาไม่เจอจริงๆ ให้ขึ้นรูปนี้
+                        }}
+                      />
+                    </div>
 
-                      <div className="card-body">
-                        <h6 className="card-title fw-bold">{p.product_name}</h6>
-                        <div className="d-flex justify-content-between align-items-center mt-3">
-                          <span className="text-muted small">
-                            <i className="bi bi-tag-fill me-1"></i> ไซส์: {p.product_size_id} {/* ควรดึงชื่อไซส์มาแสดงแทน ID */}
-                          </span>
-                          <span className="text-danger fw-bold fs-5">฿{p.product_price.toLocaleString()}</span>
-                        </div>
-                      </div>
-
-                      <div className="card-footer bg-white border-0 d-flex gap-2 pb-3">
-                        <button className="btn btn-outline-warning btn-sm w-100">แก้ไข</button>
-                        <button className="btn btn-outline-danger btn-sm w-100">ลบ</button>
+                    <div className="card-body">
+                      <h6 className="card-title fw-bold text-truncate">{p.product_name}</h6>
+                      <div className="d-flex justify-content-between align-items-center mt-2">
+                        <span className="badge bg-info text-dark">ไซส์: {p.product_size_name || 'ทั่วไป'}</span>
+                        <span className="text-danger fw-bold">฿{Number(p.product_price).toLocaleString()}</span>
                       </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-12 w-100">
-                  <div className="alert alert-light text-center shadow-sm">
-                    ไม่พบข้อมูลสินค้า หรือยังไม่ได้เปิด Backend
+
+                    <div className="card-footer bg-white border-0 d-flex gap-2 pb-3">
+                      <button className="btn btn-outline-warning btn-sm w-100">แก้ไข</button>
+                      <button className="btn btn-outline-danger btn-sm w-100">ลบ</button>
+                    </div>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         )}
@@ -226,7 +214,6 @@ function Admin() {
         {page === "productTypes" && (
           <>
             <ProductType />
-
             <div className="card p-4 shadow-sm bg-white mt-5 mb-5">
               <h4 className="text-primary mb-4">📊 สรุปจำนวนสินค้าแยกตามประเภท</h4>
               <div className="table-responsive">
@@ -242,11 +229,7 @@ function Admin() {
                       typeCounts.map((item, index) => (
                         <tr key={index}>
                           <td className="fw-bold">{item.product_type_name}</td>
-                          <td>
-                            <span className="badge bg-info text-dark fs-6">
-                              {item.product_count} รายการ
-                            </span>
-                          </td>
+                          <td><span className="badge bg-info text-dark fs-6">{item.product_count} รายการ</span></td>
                         </tr>
                       ))
                     ) : (
@@ -260,7 +243,6 @@ function Admin() {
             </div>
           </>
         )}
-
       </div>
     </div>
   );
