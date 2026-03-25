@@ -62,5 +62,4 @@ router.put('/update/:id', (req, res) => {
         return res.json({ message: "Updated" });
     });
 });
-
-module.exports = router; 
+module.exports = router;
