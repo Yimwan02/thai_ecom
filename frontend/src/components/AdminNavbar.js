@@ -9,7 +9,6 @@ function AdminNavbar({ user, setPage }) {
       <span className="navbar-brand">👑 Admin Panel</span>
 
       <div className="ms-auto d-flex align-items-center gap-3">
-
         {/* MENU */}
         <button
           className="btn btn-outline-light btn-sm"
@@ -23,6 +22,14 @@ function AdminNavbar({ user, setPage }) {
           onClick={() => setPage("products")}
         >
           🛍 สินค้า
+        </button>
+
+        {/* แก้ไขตรงนี้: เพิ่มเครื่องหมาย > หลัง onClick */}
+        <button
+          className="btn btn-outline-info btn-sm ms-2"
+          onClick={() => setPage("productTypes")}
+        >
+          📊 ประเภทสินค้า
         </button>
 
         {/* USER */}

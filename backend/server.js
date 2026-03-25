@@ -7,9 +7,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// เรียก routes
+// // เรียก routes
 const authRoutes = require("./routes/auth");
+const productTypeRoutes = require("./routes/productType"); 
+
 app.use("/api", authRoutes);
+app.use("/api/product-types", productTypeRoutes); 
 
 // test
 app.get("/", (req, res) => {
