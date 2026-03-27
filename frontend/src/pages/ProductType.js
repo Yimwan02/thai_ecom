@@ -83,7 +83,7 @@ const ProductType = () => {
                     <tr>
                         <th>ID</th>
                         <th>ชื่อประเภทสินค้า</th>
-                        <th>จำนวนสินค้า (ชิ้น)</th>
+                        <th>จำนวนสินค้า </th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -116,7 +116,7 @@ const ProductType = () => {
                         <input 
                             type="text" 
                             className="form-control" 
-                            placeholder="ระบุชื่อประเภทสินค้า ตัวอย่าง: เครื่องดื่ม, ขนม"
+                            placeholder="ระบุชื่อประเภทสินค้า ตัวอย่าง: เสื้ออื่น ๆ "
                             value={typeName}
                             onChange={(e) => setTypeName(e.target.value)}
                             required 

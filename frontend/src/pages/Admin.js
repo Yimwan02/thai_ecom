@@ -16,7 +16,7 @@ function Admin() {
   const fetchProducts = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/products");
-      console.log("ข้อมูลสินค้าที่ดึงมาได้:", res.data); // เพิ่มบรรทัดนี้
+      console.log("ข้อมูลสินค้าที่ดึงมาได้:", res.data);
       setProducts(res.data);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -31,7 +31,8 @@ function Admin() {
     fetchUsers();
     fetchTypeCounts();
     fetchProducts();
-  }, []);
+    // เพิ่ม [user] เพื่อแก้ Warning สีเหลืองใน Terminal
+  }, [user]);
 
   const fetchUsers = async () => {
     try {
@@ -177,16 +178,16 @@ function Admin() {
               {products.map((p) => (
                 <div className="col" key={p.product_id}>
                   <div className="card h-100 shadow-sm border-0">
-                    {/* พื้นที่แสดงรูปภาพ */}
                     <div className="text-center p-3" style={{ background: '#f8f9fa', height: '200px' }}>
                       <img
-                        // ตรงนี้สำคัญมาก: ต้องดึงชื่อไฟล์จาก p.product_img มาต่อท้าย URL ของ Backend
+                        // แก้ไข: ใช้ Template Literal และ URL ของภาพ
                         src={`http://localhost:5000/images/${p.product_img}`}
                         className="img-fluid h-100"
                         alt={p.product_name}
                         style={{ objectFit: 'contain' }}
                         onError={(e) => {
-                          e.target.src = "https://via.placeholder.com/150?text=No+Image"; // ถ้าหาไม่เจอจริงๆ ให้ขึ้นรูปนี้
+                          // แก้ไข: เปลี่ยนไปใช้ placehold.co เพราะ placeholder.com ชอบมีปัญหา
+                          e.target.src = "https://placehold.co/150?text=No+Image"; 
                         }}
                       />
                     </div>
@@ -195,7 +196,8 @@ function Admin() {
                       <h6 className="card-title fw-bold text-truncate">{p.product_name}</h6>
                       <div className="d-flex justify-content-between align-items-center mt-2">
                         <span className="badge bg-info text-dark">ไซส์: {p.product_size_name || 'ทั่วไป'}</span>
-                        <span className="text-danger fw-bold">฿{Number(p.product_price).toLocaleString()}</span>
+                        {/* แก้ไข: เปลี่ยน p.product_price เป็น p.price ให้ตรงกับ Database */}
+                        <span className="text-danger fw-bold">฿{Number(p.price || 0).toLocaleString()}</span>
                       </div>
                     </div>
 
@@ -210,7 +212,7 @@ function Admin() {
           </div>
         )}
 
-        {/* ================= 3. หน้าประเภทสินค้า ================= */}
+         {/* ================= 3. หน้าประเภทสินค้า ================= */}
         {page === "productTypes" && (
           <>
             <ProductType />
