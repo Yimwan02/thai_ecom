@@ -36,3 +36,103 @@
     transform: rotate(360deg);
   }
 }
+
+/* พื้นหลังของทั้งหน้า */
+.product-page-bg {
+  background: linear-gradient(135deg, #000033 0%, #000066 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+/* หัวข้อสินค้า */
+.product-title {
+  font-weight: 800;
+  color: #000033;
+  letter-spacing: -1px;
+}
+
+/* ราคาสินค้า */
+.price-tag {
+  color: #c5a358; /* สีทอง Changsuek */
+  font-weight: 700;
+  font-size: 2rem;
+}
+
+/* ปุ่มเลือกไซส์ */
+.size-btn {
+  width: 50px;
+  height: 50px;
+  border: 2px solid #ddd;
+  background: white;
+  font-weight: bold;
+  transition: 0.2s;
+  border-radius: 8px;
+}
+
+.size-btn:hover {
+  border-color: #c5a358;
+}
+
+.size-btn.active {
+  background: #000033;
+  color: white;
+  border-color: #000033;
+}
+
+/* ปุ่มซื้อ (Add to Cart) */
+.btn-buy-now {
+  background: #000033;
+  color: white;
+  border: none;
+  padding: 15px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border-radius: 10px;
+  transition: 0.3s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.btn-buy-now:hover {
+  background: #c5a358;
+  transform: translateY(-3px);
+}
+
+/* สีทองพิเศษ */
+.bg-gold {
+  background-color: #c5a358 !important;
+}
+
+/* คำอธิบายสินค้า */
+.product-desc-text {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.6;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.btn-back-detail {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #000033;
+  color: white;
+  text-decoration: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: 0.3s;
+  z-index: 10;
+  width: fit-content; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-back-detail:hover {
+  background: #c5a358;
+  color: #000033;
+  transform: translateX(-5px);
+}

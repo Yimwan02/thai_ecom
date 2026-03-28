@@ -6,6 +6,7 @@ import Admin from "./pages/Admin";
 import User from "./pages/User";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ProductType from './pages/ProductType';
+import ProductDetail from './pages/ProductDetail';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/user" element={<User />} />
         <Route path="/admin/product-type" element={<ProductType />} />
+       <Route path="/product/:id" element={<ProductDetail />} />
       </Routes>
     </BrowserRouter>
   );

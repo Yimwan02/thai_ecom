@@ -54,3 +54,26 @@ app.listen(PORT, () => {
     console.log("ขณะนี้กำลังเชื่อมต่อกับฐานข้อมูลชื่อ:", rows[0]['DATABASE()']);
   });
 });
+
+app.get('/api/products/:id', (req, res) => {
+  const { id } = req.params; // รับเลข ID จาก URL (เช่น เลข 1)
+  const sql = `
+    SELECT p.*, s.product_size_name 
+    FROM products p 
+    LEFT JOIN product_size s ON p.product_size_id = s.product_size_id 
+    WHERE p.product_id = ?
+  `;
+
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      console.error("DB Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ message: "ไม่พบสินค้าชิ้นนี้" });
+    }
+
+    res.json(results[0]); // ส่งกลับไปแค่ Object เดียว (สินค้าตัวที่เลือก)
+  });
+});
