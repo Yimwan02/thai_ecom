@@ -136,3 +136,120 @@
   color: #000033;
   transform: translateX(-5px);
 }
+
+/* พื้นหลังของหน้าตะกร้า */
+.cart-page-bg {
+    background-color: #000033; /* น้ำเงินเข้ม */
+    min-height: 100vh;
+    padding: 50px 0;
+}
+
+/* กล่องตะกร้าหลัก */
+.cart-container {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* สไตล์รายการสินค้าแต่ละแถว */
+.cart-item-row {
+    border-bottom: 1px solid #eee;
+    padding: 20px 0;
+    display: flex;
+    align-items: center;
+}
+
+.cart-item-img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+/* ปุ่มเพิ่ม/ลดจำนวน */
+.qty-btn {
+    border: 1px solid #000033;
+    background: white;
+    color: #000033;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.qty-btn:hover {
+    background: #c5a358; /* สีทอง */
+    border-color: #c5a358;
+    color: white;
+}
+
+/* ปุ่มลบสินค้า */
+.btn-remove {
+    color: #ff4d4d;
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    transition: 0.3s;
+}
+
+.btn-remove:hover {
+    text-decoration: underline;
+    transform: scale(1.1);
+}
+
+/* ยอดรวมราคาสีทอง */
+.total-price-text {
+    color: #c5a358;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* ปุ่มชำระเงิน */
+.btn-checkout {
+    background: #000033;
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: bold;
+    width: 100%;
+    margin-bottom: 10px;
+    transition: 0.3s;
+}
+
+.btn-checkout:hover {
+    background: #c5a358;
+    color: #000033;
+}
+
+/* ปุ่มดูคำสั่งซื้อ */
+.btn-view-orders {
+    background: white;
+    color: #000033;
+    border: 2px solid #000033;
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: bold;
+    width: 100%;
+    transition: 0.3s;
+}
+
+/* ตัวอย่างสไตล์ปุ่มย้อนกลับ */
+.btn-back-orders {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-back-orders:hover {
+    background-color: #e2e6ea;
+    color: #000;
+}

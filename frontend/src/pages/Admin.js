@@ -13,16 +13,6 @@ function Admin() {
   const [newRole, setNewRole] = useState(2);
   const [products, setProducts] = useState([]);
 
-  const fetchProducts = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/products");
-      console.log("ข้อมูลสินค้าที่ดึงมาได้:", res.data);
-      setProducts(res.data);
-    } catch (err) {
-      console.error("Fetch error:", err);
-    }
-  };
-
   useEffect(() => {
     if (!user || user.role_id !== 1) {
       window.location.href = "/";
@@ -31,142 +21,118 @@ function Admin() {
     fetchUsers();
     fetchTypeCounts();
     fetchProducts();
-    // เพิ่ม [user] เพื่อแก้ Warning สีเหลืองใน Terminal
   }, [user]);
 
   const fetchUsers = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/users");
       setUsers(res.data);
-    } catch (err) {
-      console.error("Fetch users error:", err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const fetchTypeCounts = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/product-types");
       setTypeCounts(res.data);
-    } catch (err) {
-      console.error("Fetch type counts error:", err);
-    }
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/products");
+      setProducts(res.data);
+    } catch (err) { console.error(err); }
   };
 
   const handleCreateUser = async () => {
-    if (!newUsername || !newPassword) {
-      alert("กรอกข้อมูลให้ครบ");
-      return;
-    }
+    if (!newUsername || !newPassword) return alert("กรอกข้อมูลให้ครบ");
     try {
       await axios.post("http://localhost:5000/api/users", {
         username: newUsername,
         password: newPassword,
         role_id: Number(newRole),
       });
-      alert("เพิ่มผู้ใช้สำเร็จ");
-      setNewUsername("");
-      setNewPassword("");
-      setNewRole(2);
-      fetchUsers();
-    } catch (err) {
-      alert("เพิ่มไม่สำเร็จ");
-    }
+      alert("เพิ่มสำเร็จ");
+      setNewUsername(""); setNewPassword(""); fetchUsers();
+    } catch (err) { alert("เพิ่มไม่สำเร็จ"); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("ลบผู้ใช้?")) return;
+    if (!window.confirm("ยืนยันการลบ?")) return;
     try {
       await axios.delete(`http://localhost:5000/api/users/${id}`);
       fetchUsers();
-    } catch (err) {
-      alert("ลบไม่สำเร็จ");
-    }
+    } catch (err) { alert("ลบไม่สำเร็จ"); }
   };
 
   const handleRoleChange = async (id, role_id) => {
-    if (!window.confirm("เปลี่ยน role?")) return;
     try {
       await axios.put(`http://localhost:5000/api/users/${id}`, {
         role_id: Number(role_id),
       });
       fetchUsers();
-    } catch (err) {
-      alert("เปลี่ยน Role ไม่สำเร็จ");
-    }
+    } catch (err) { alert("เปลี่ยน Role ไม่สำเร็จ"); }
   };
 
   return (
-    <div className="bg-light min-vh-100">
+    <div className="bg-light min-vh-100 pb-5">
       <AdminNavbar user={user} setPage={setPage} />
       <div className="container mt-4">
-        {/* ================= 1. หน้าจัดการผู้ใช้ ================= */}
+
+        {/* จัดการผู้ใช้ */}
         {page === "users" && (
           <>
             <h4 className="mb-3">👤 จัดการผู้ใช้</h4>
-            <div className="table-responsive">
-              <table className="table table-bordered text-center align-middle shadow-sm bg-white">
-                <thead className="table-dark">
-                  <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Action</th>
+            <table className="table table-bordered bg-white shadow-sm text-center">
+              <thead className="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.user_id}>
+                    <td>{u.user_id}</td>
+                    <td>{u.username}</td>
+                    <td>
+                      <select
+                        className="form-select mx-auto" style={{ width: '120px' }}
+                        value={u.role_id}
+                        onChange={(e) => handleRoleChange(u.user_id, e.target.value)}
+                      >
+                        <option value="1">Admin</option>
+                        <option value="2">User</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(u.user_id)}>ลบ</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.length > 0 ? (
-                    users.map((u) => (
-                      <tr key={u.user_id}>
-                        <td>{u.user_id}</td>
-                        <td>{u.username}</td>
-                        <td>
-                          <select
-                            className="form-select mx-auto"
-                            style={{ width: "120px" }}
-                            value={u.role_id}
-                            onChange={(e) => handleRoleChange(u.user_id, e.target.value)}
-                          >
-                            <option value="1">Admin</option>
-                            <option value="2">User</option>
-                          </select>
-                        </td>
-                        <td>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(u.user_id)}>ลบ</button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4">กำลังโหลดข้อมูล หรือ ไม่พบผู้ใช้...</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="card p-3 mt-4 shadow-sm border-0">
+                ))}
+              </tbody>
+            </table>
+
+            {/* ฟอร์มเพิ่มผู้ใช้ */}
+            <div className="card p-3 shadow-sm border-0 mt-4">
               <h5>เพิ่มผู้ใช้ใหม่</h5>
               <div className="row g-2">
-                <div className="col-md-4">
-                  <input className="form-control" placeholder="Username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
-                </div>
+                <div className="col-md-4"><input className="form-control" placeholder="Username" value={newUsername} onChange={e => setNewUsername(e.target.value)} /></div>
+                <div className="col-md-3"><input className="form-control" type="password" placeholder="Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></div>
                 <div className="col-md-3">
-                  <input className="form-control" type="password" placeholder="Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                </div>
-                <div className="col-md-3">
-                  <select className="form-select" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+                  <select className="form-select" value={newRole} onChange={e => setNewRole(e.target.value)}>
                     <option value="1">Admin</option>
                     <option value="2">User</option>
                   </select>
                 </div>
-                <div className="col-md-2">
-                  <button className="btn btn-success w-100" onClick={handleCreateUser}>เพิ่ม</button>
-                </div>
+                <div className="col-md-2"><button className="btn btn-success w-100" onClick={handleCreateUser}>เพิ่ม</button></div>
               </div>
             </div>
           </>
         )}
-
-        {/* ================= 2. หน้าจัดการสินค้า ================= */}
+        {/* ================= 2. หน้าจัดการสินค้า (เอามาคืนให้แล้วครับ!) ================= */}
         {page === "products" && (
           <div className="animate__animated animate__fadeIn">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -180,14 +146,12 @@ function Admin() {
                   <div className="card h-100 shadow-sm border-0">
                     <div className="text-center p-3" style={{ background: '#f8f9fa', height: '200px' }}>
                       <img
-                        // แก้ไข: ใช้ Template Literal และ URL ของภาพ
                         src={`http://localhost:5000/images/${p.product_img}`}
                         className="img-fluid h-100"
                         alt={p.product_name}
                         style={{ objectFit: 'contain' }}
                         onError={(e) => {
-                          // แก้ไข: เปลี่ยนไปใช้ placehold.co เพราะ placeholder.com ชอบมีปัญหา
-                          e.target.src = "https://placehold.co/150?text=No+Image"; 
+                          e.target.src = "https://placehold.co/150?text=No+Image";
                         }}
                       />
                     </div>
@@ -196,7 +160,6 @@ function Admin() {
                       <h6 className="card-title fw-bold text-truncate">{p.product_name}</h6>
                       <div className="d-flex justify-content-between align-items-center mt-2">
                         <span className="badge bg-info text-dark">ไซส์: {p.product_size_name || 'ทั่วไป'}</span>
-                        {/* แก้ไข: เปลี่ยน p.product_price เป็น p.price ให้ตรงกับ Database */}
                         <span className="text-danger fw-bold">฿{Number(p.price || 0).toLocaleString()}</span>
                       </div>
                     </div>
@@ -211,39 +174,30 @@ function Admin() {
             </div>
           </div>
         )}
-
-         {/* ================= 3. หน้าประเภทสินค้า ================= */}
+        {/* สรุปประเภทสินค้า (ด้านล่างสุด) */}
         {page === "productTypes" && (
-          <>
+          <div className="mt-5">
             <ProductType />
-            <div className="card p-4 shadow-sm bg-white mt-5 mb-5">
+            <div className="card p-4 shadow-sm bg-white mt-4">
               <h4 className="text-primary mb-4">📊 สรุปจำนวนสินค้าแยกตามประเภท</h4>
-              <div className="table-responsive">
-                <table className="table table-hover table-bordered text-center">
-                  <thead className="table-primary">
-                    <tr>
-                      <th>ชื่อประเภทสินค้า</th>
-                      <th>จำนวนที่มีในระบบ (รายการ)</th>
+              <table className="table table-hover table-bordered text-center">
+                <thead className="table-primary">
+                  <tr>
+                    <th>ชื่อประเภทสินค้า</th>
+                    <th>จำนวนที่มีในระบบ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {typeCounts.map((item, index) => (
+                    <tr key={index}>
+                      <td className="fw-bold">{item.product_type_name}</td>
+                      <td><span className="badge bg-info text-dark fs-6">{item.product_count} รายการ</span></td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {typeCounts?.length > 0 ? (
-                      typeCounts.map((item, index) => (
-                        <tr key={index}>
-                          <td className="fw-bold">{item.product_type_name}</td>
-                          <td><span className="badge bg-info text-dark fs-6">{item.product_count} รายการ</span></td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="2" className="text-muted">ไม่พบข้อมูลสรุป</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

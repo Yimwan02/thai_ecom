@@ -4,29 +4,18 @@ import { useNavigate } from "react-router-dom";
 
 function Checkout() {
   const { cart, totalPrice, clearCart } = useContext(CartContext);
-
   const [address, setAddress] = useState("");
   const [payment, setPayment] = useState("cod");
-
   const navigate = useNavigate();
 
   const handleOrder = async () => {
-    if (cart.length === 0) {
-      alert("ไม่มีสินค้าในตะกร้า");
-      return;
-    }
-
-    if (!address) {
-      alert("กรุณากรอกที่อยู่");
-      return;
-    }
+    if (cart.length === 0) { alert("ไม่มีสินค้าในตะกร้า"); return; }
+    if (!address) { alert("กรุณากรอกที่อยู่จัดส่ง"); return; }
 
     try {
       const res = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cart: cart,
           total: totalPrice,
@@ -35,112 +24,107 @@ function Checkout() {
         }),
       });
 
-      let data;
-
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
-
       if (res.ok) {
-        alert("สั่งซื้อสำเร็จ 🎉");
-
-        // ล้างตะกร้า
+        alert("สั่งซื้อสำเร็จ 🎉 ขอบคุณที่ใช้บริการครับ");
         clearCart();
-
-        // (ถ้ามีหน้า success)
-        // navigate("/success");
+        navigate("/orders");
       } else {
-        alert(data.message || "เกิดข้อผิดพลาด");
+        alert("เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่อีกครั้ง");
       }
-
     } catch (error) {
-      console.log(error);
-      alert("เชื่อมต่อ server ไม่ได้");
+      alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     }
   };
 
   return (
-    <div className="container mt-5">
-      <h2>Checkout</h2>
+    <div className="cart-page-bg" style={{ minHeight: '100vh', padding: '40px 0' }}>
+      <div className="container">
+        <div className="checkout-card shadow-lg mx-auto" style={{ maxWidth: '900px', backgroundColor: '#fff', borderRadius: '20px', overflow: 'hidden' }}>
+          
+          {/* Header */}
+          <div className="p-4 text-white text-center" style={{ backgroundColor: '#000033' }}>
+            <h2 className="fw-bold mb-0">สรุปรายละเอียดการสั่งซื้อ</h2>
+          </div>
 
-      {/* 🧾 รายการสินค้า */}
-      <div className="mb-4">
-        <h4>รายการสินค้า</h4>
-
-        {cart.map((item, index) => (
-          <div key={index} className="d-flex justify-content-between border-bottom py-2">
-            <img
-              src={`http://localhost:5000/images/${item.image}`} // item.image = product_img จาก DB
-              alt={item.name}
-              width={80}
-              className="me-3"
-            />
-            <div>
-              <p>{item.name} (ไซส์: {item.size})</p>
-              <p>฿{item.price} x {item.quantity}</p>
+          <div className="row g-0">
+            {/* ฝั่งซ้าย: รายการสินค้า */}
+            <div className="col-md-7 p-4 border-end">
+              <h5 className="fw-bold mb-4 border-bottom pb-2">📦 รายการสินค้าของคุณ</h5>
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                {cart.map((item, index) => (
+                  <div key={index} className="d-flex align-items-center mb-3 p-2 rounded-3 bg-light">
+                    <img
+                      src={`http://localhost:5000/images/${item.product_img}`} 
+                      alt={item.product_name}
+                      width={80}
+                      height={80}
+                      className="me-3 rounded shadow-sm"
+                      style={{ objectFit: 'contain', backgroundColor: '#fff' }}
+                    />
+                    <div className="flex-grow-1">
+                      <p className="mb-0 fw-bold text-navy" style={{ fontSize: '0.95rem' }}>{item.product_name}</p>
+                      <small className="text-muted d-block">ไซส์: <span className="badge bg-secondary">{item.size}</span> | จำนวน: {item.quantity}</small>
+                      <p className="mb-0 fw-bold text-primary">฿{(item.price * item.quantity).toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
-              ฿{item.price * item.quantity}
+
+            {/* ฝั่งขวา: ที่อยู่และการชำระเงิน */}
+            <div className="col-md-5 p-4 bg-light">
+              <div className="mb-4">
+                <h5 className="fw-bold mb-3">📍 ที่อยู่จัดส่ง</h5>
+                <textarea 
+                  className="form-control border-0 shadow-sm" 
+                  rows="3" 
+                  style={{ borderRadius: '10px' }}
+                  placeholder="กรอกชื่อ-นามสกุล เบอร์โทร และที่อยู่จัดส่ง..."
+                  value={address} 
+                  onChange={(e) => setAddress(e.target.value)} 
+                />
+              </div>
+
+              <div className="mb-4">
+                <h5 className="fw-bold mb-3">💳 วิธีชำระเงิน</h5>
+                <div className="payment-options d-grid gap-2">
+                  <label className={`p-3 border rounded-3 cursor-pointer d-flex align-items-center ${payment === 'cod' ? 'border-primary bg-white shadow-sm' : ''}`} style={{ cursor: 'pointer' }}>
+                    <input type="radio" className="form-check-input me-3" checked={payment === "cod"} onChange={() => setPayment("cod")} />
+                    <span>ชำระเงินปลายทาง (COD)</span>
+                  </label>
+                  <label className={`p-3 border rounded-3 cursor-pointer d-flex align-items-center ${payment === 'transfer' ? 'border-primary bg-white shadow-sm' : ''}`} style={{ cursor: 'pointer' }}>
+                    <input type="radio" className="form-check-input me-3" checked={payment === "transfer"} onChange={() => setPayment("transfer")} />
+                    <span>โอนเงินผ่านธนาคาร</span>
+                  </label>
+                </div>
+              </div>
+
+              <hr />
+
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <span className="text-secondary fw-bold">ยอดชำระสุทธิ:</span>
+                <span className="fs-3 fw-bold text-danger">฿{totalPrice.toLocaleString()}</span>
+              </div>
+
+              <div className="d-grid gap-2">
+                <button 
+                  onClick={handleOrder} 
+                  className="btn btn-lg text-white fw-bold shadow-sm" 
+                  style={{ backgroundColor: '#28a745', borderRadius: '12px', padding: '12px' }}
+                >
+                  ยืนยันคำสั่งซื้อ
+                </button>
+                <button 
+                  className="btn btn-link text-decoration-none text-muted mt-2"
+                  onClick={() => navigate('/cart')}
+                >
+                  ← กลับไปหน้าตะกร้า
+                </button>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* 📦 ที่อยู่ */}
-      <div className="mb-4">
-        <h4>ที่อยู่จัดส่ง</h4>
-        <textarea
-          className="form-control"
-          placeholder="กรอกที่อยู่ของคุณ"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
-      </div>
-
-      {/* 💳 วิธีจ่ายเงิน */}
-      <div className="mb-4">
-        <h4>วิธีชำระเงิน</h4>
-
-        <div>
-          <input
-            type="radio"
-            value="cod"
-            checked={payment === "cod"}
-            onChange={() => setPayment("cod")}
-          /> เงินปลายทาง
-        </div>
-
-        <div>
-          <input
-            type="radio"
-            value="transfer"
-            checked={payment === "transfer"}
-            onChange={() => setPayment("transfer")}
-          /> โอนเงิน
         </div>
       </div>
-
-      {/* 💰 รวม */}
-      <h3>รวมทั้งหมด: ฿{totalPrice}</h3>
-
-      {/* ✅ ปุ่ม */}
-      <button onClick={handleOrder} className="btn btn-success w-100 mt-3">
-        ยืนยันคำสั่งซื้อ
-      </button>
-
-      <button
-        className="btn btn-primary mt-2 w-100"
-        onClick={() => navigate('/orders')}>
-      
-        ดูคำสั่งซื้อ
-      </button>
-
-      <button className="btn btn-secondary mt-2 w-100"
-        onClick={() => navigate('/user')} >
-        กลับหน้าหลัก
-      </button>
     </div>
   );
 }

@@ -3,77 +3,72 @@ import { createContext, useState, useEffect } from "react";
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-
-  // โหลดจาก localStorage
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem("cart");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // save ทุกครั้งที่ cart เปลี่ยน
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  // ➕ เพิ่มสินค้า
   const addToCart = (product) => {
-    const exist = cart.find(item => item.id === product.id);
+    setCart((prevCart) => {
+      // ตรวจสอบว่ามีสินค้า id นี้ และ size นี้ในตะกร้าหรือยัง
+      const isItemInCart = prevCart.find(
+        (item) => item.product_id === product.product_id && item.size === product.size
+      );
 
-    if (exist) {
-      setCart(cart.map(item =>
-        item.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
-    } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
-    }
+      if (isItemInCart) {
+        return prevCart.map((item) =>
+          item.product_id === product.product_id && item.size === product.size
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+
+      // ถ้ายังไม่มี ให้เพิ่มใหม่ (ส่งค่าให้ครบตามนี้)
+      return [
+        ...prevCart,
+        {
+          product_id: product.product_id,
+          product_name: product.product_name,
+          price: product.price,
+          product_img: product.product_img, // << หัวใจสำคัญ
+          size: product.size || 'S',
+          quantity: 1,
+        },
+      ];
+    });
   };
 
-  // ➕ เพิ่มจำนวน
-  const increaseQty = (id) => {
+  const increaseQty = (id, size) => {
     setCart(cart.map(item =>
-      item.id === id
-        ? { ...item, quantity: item.quantity + 1 }
-        : item
+      item.product_id === id && item.size === size
+        ? { ...item, quantity: item.quantity + 1 } : item
     ));
   };
 
-  // ➖ ลดจำนวน
-  const decreaseQty = (id) => {
+  const decreaseQty = (id, size) => {
     setCart(cart.map(item =>
-      item.id === id && item.quantity > 1
-        ? { ...item, quantity: item.quantity - 1 }
-        : item
+      item.product_id === id && item.size === size && item.quantity > 1
+        ? { ...item, quantity: item.quantity - 1 } : item
     ));
   };
 
-  // ❌ ลบสินค้า
-  const removeItem = (id) => {
-    setCart(cart.filter(item => item.id !== id));
+  const removeItem = (id, size) => {
+    setCart(cart.filter(item => !(item.product_id === id && item.size === size)));
   };
 
-  // 💰 รวมราคา
-  const totalPrice = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const clearCart = () => {
-  setCart([]);
-  localStorage.removeItem("cart");
+    setCart([]);
+    localStorage.removeItem("cart");
   };
 
   return (
-    <CartContext.Provider value={{
-      cart,
-      addToCart,
-      increaseQty,
-      decreaseQty,
-      removeItem,
-      totalPrice,
-      clearCart
-    }}>
+    <CartContext.Provider value={{ cart, addToCart, increaseQty, decreaseQty, removeItem, totalPrice, clearCart }}>
       {children}
     </CartContext.Provider>
   );

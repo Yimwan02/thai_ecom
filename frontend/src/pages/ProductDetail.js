@@ -1,11 +1,11 @@
-import React, { useState, useEffect ,useContext} from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom'; // รวม import ไว้ด้วยกัน
 import axios from 'axios';
 import '../App.css';
 import { CartContext } from "../context/CartContext";
 
 const ProductDetail = () => {
-    const { id } = useParams(); 
+    const { id } = useParams();
     const [product, setProduct] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
     const [mainImage, setMainImage] = useState('');
@@ -45,10 +45,10 @@ const ProductDetail = () => {
                     {/* ฝั่งซ้าย: รูปภาพ */}
                     <div className="col-md-7 p-4 d-flex flex-column align-items-center bg-light">
                         <div className="main-img-box">
-                            <img 
-                                src={`http://localhost:5000/images/${mainImage}`} 
-                                className="img-fluid" 
-                                alt={product.product_name} 
+                            <img
+                                src={`http://localhost:5000/images/${mainImage}`}
+                                className="img-fluid"
+                                alt={product.product_name}
                                 style={{ maxHeight: '450px', objectFit: 'contain' }}
                             />
                         </div>
@@ -79,25 +79,23 @@ const ProductDetail = () => {
 
 
 
-                        <button 
+                        <button
                             className="btn-buy-now mt-5"
                             onClick={() => {
                                 if (!selectedSize) {
-                                alert("กรุณาเลือกไซส์ก่อน");
-                                return;
+                                    alert("กรุณาเลือกไซส์ก่อน");
+                                    return;
                                 }
-
                                 addToCart({
-                                id: product.product_id,
-                                name: product.product_name,
-                                price: product.price,
-                                image: product.product_img,
-                                size: selectedSize
+                                    product_id: product.product_id,
+                                    product_name: product.product_name,
+                                    price: product.price,
+                                    product_img: product.product_img, // ✅ ส่งชื่อรูปไป
+                                    size: selectedSize
                                 });
-
-                                alert("เพิ่มลงตะกร้าสำเร็จ 🎉"); // 👈 เพิ่มตรงนี้
+                                alert("เพิ่มลงตะกร้าสำเร็จ 🎉");
                             }}
-                            >
+                        >
                             ADD TO CART
                         </button>
 
@@ -108,7 +106,7 @@ const ProductDetail = () => {
 
 
 
-                        
+
                         <p className="product-desc-text mt-4">
                             {product.product_detail || "สัมผัสประสบการณ์ความนุ่มสบายด้วยเนื้อผ้าเกรดพรีเมียม ระบายอากาศได้ดีเยี่ยม พร้อมดีไซน์ลิขสิทธิ์แท้"}
                         </p>
