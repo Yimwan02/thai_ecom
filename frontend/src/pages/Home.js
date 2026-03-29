@@ -37,7 +37,7 @@ function Home() {
       {/* Navbar */}
       <nav className="navbar navbar-dark bg-navy p-3 shadow">
         <div className="container d-flex justify-content-between align-items-center">
-          <img src="/logo-changsuek.png" alt="Logo" style={{ height: '50px' }} />
+          <img src="/logo-thailand.jpg" alt="Logo" style={{ height: '50px' }} />
           <div className="search-box w-50">
             <input type="text" className="form-control" placeholder="ค้นหาสินค้า..." />
           </div>

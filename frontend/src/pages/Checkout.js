@@ -12,26 +12,35 @@ function Checkout() {
     if (cart.length === 0) { alert("ไม่มีสินค้าในตะกร้า"); return; }
     if (!address) { alert("กรุณากรอกที่อยู่จัดส่ง"); return; }
 
+    // ✅ 1. ดึงข้อมูล User จาก localStorage เพื่อเอา user_id
+    const userData = JSON.parse(localStorage.getItem("user"));
+    const userId = userData ? userData.user_id : null;
+
     try {
       const res = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cart: cart,
-          total: totalPrice,
+          user_id: userId,          // ✅ ส่ง user_id ไปด้วย (ถ้าไม่มีจะเป็น null)
+          cartItems: cart,          // ✅ เปลี่ยนชื่อจาก cart เป็น cartItems ให้ตรงกับ Backend
+          total_amount: totalPrice, // ✅ เปลี่ยนชื่อจาก total เป็น total_amount
           address: address,
-          payment: payment,
+          payment_method: payment,  // ✅ เปลี่ยนชื่อจาก payment เป็น payment_method
         }),
       });
+
+      const data = await res.json(); // อ่าน response เผื่อมี error ส่งกลับมา
 
       if (res.ok) {
         alert("สั่งซื้อสำเร็จ 🎉 ขอบคุณที่ใช้บริการครับ");
         clearCart();
         navigate("/orders");
       } else {
-        alert("เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่อีกครั้ง");
+        // ถ้า Backend ส่ง error มา ให้แจ้งเตือนตามนั้น
+        alert("เกิดข้อผิดพลาด: " + (data.error || "กรุณาลองใหม่อีกครั้ง"));
       }
     } catch (error) {
+      console.error("Fetch Error:", error);
       alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     }
   };

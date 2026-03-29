@@ -1,3 +1,7 @@
+html {
+  scroll-behavior: smooth;
+}
+
 .App {
   text-align: center;
 }
@@ -325,29 +329,38 @@
   border-bottom: 2px solid var(--navy-dark);
 }
 
-/* แถบสีทอง */
+/* แถบเมนูแบบไม่มีกรอบพื้นหลัง */
 .category-container {
-  background-color: #c5a358;
-  padding: 15px 0;
+  background: transparent; /* ลบพื้นหลังแถบออก */
+  padding: 20px 0;
+  position: absolute;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
   display: flex;
   justify-content: center;
-  gap: 15px; /* ระยะห่างระหว่างปุ่ม */
 }
 
-/* ปรับแต่งปุ่มให้โค้งมนเหมือนในรูป */
+/* ปุ่มเมนูสไตล์สีทองจาง */
 .category-pill {
-  background-color: transparent;
-  border: none;
-  color: #000033;
-  font-weight: bold;
+  background-color: rgba(197, 163, 88, 0.2); /* สีทองจางๆ โปร่งแสง */
+  border: 1px solid rgba(197, 163, 88, 0.4); /* ขอบทองจางๆ */
+  color: rgba(255, 255, 255, 0.8); /* ตัวหนังสือขาวจาง */
+  font-weight: 600;
   padding: 8px 25px;
-  border-radius: 50px; /* ทำให้ปุ่มโค้งเป็นวงรี */
+  border-radius: 50px;
   transition: all 0.3s ease;
-  text-decoration: none;
+  margin: 0 8px;
+  cursor: pointer;
+  backdrop-filter: blur(5px); /* เพิ่มความหรูให้ตัวปุ่ม */
 }
 
-/* เอฟเฟกต์ตอนเอาเมาส์ไปชี้ หรือตอนที่เลือกปุ่มนั้นอยู่ */
-.category-pill:hover, .category-pill.active {
-  background-color: rgba(0, 0, 51, 0.1); /* สีจางๆ เวลาชี้ */
-  transform: scale(1.05);
+/* เมื่อเมาส์ชี้ (Hover) หรือปุ่มที่ถูกเลือก (Active) */
+.category-pill:hover, 
+.category-pill.active {
+  background-color: #c5a358; /* สีทองเข้ม (ไม่จาง) */
+  color: #000033; /* ตัวหนังสือเปลี่ยนเป็นสีน้ำเงินเข้มเพื่อให้ตัดกับสีทอง */
+  border-color: #c5a358;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(197, 163, 88, 0.4);
 }

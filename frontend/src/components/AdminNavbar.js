@@ -39,6 +39,13 @@ function AdminNavbar({ user, setPage }) {
           📊 ประเภทสินค้า
         </button>
 
+        <button
+          className="btn btn-warning btn-sm fw-bold mx-1"
+          onClick={() => setPage("sizes")}
+        >
+          📏 แก้ไขไซส์
+        </button>
+
         {/* USER */}
         <span className="text-white">
           {user?.username}
