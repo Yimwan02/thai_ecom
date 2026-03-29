@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useContext} from 'react';
 import { useParams, Link } from 'react-router-dom'; // รวม import ไว้ด้วยกัน
 import axios from 'axios';
 import '../App.css';
+import { CartContext } from "../context/CartContext";
 
 const ProductDetail = () => {
     const { id } = useParams(); 
     const [product, setProduct] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
     const [mainImage, setMainImage] = useState('');
+    const { addToCart } = useContext(CartContext);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -73,7 +75,39 @@ const ProductDetail = () => {
                             </div>
                         </div>
 
-                        <button className="btn-buy-now mt-5">ADD TO CART</button>
+
+
+
+
+                        <button 
+                            className="btn-buy-now mt-5"
+                            onClick={() => {
+                                if (!selectedSize) {
+                                alert("กรุณาเลือกไซส์ก่อน");
+                                return;
+                                }
+
+                                addToCart({
+                                id: product.product_id,
+                                name: product.product_name,
+                                price: product.price,
+                                image: product.product_img,
+                                size: selectedSize
+                                });
+
+                                alert("เพิ่มลงตะกร้าสำเร็จ 🎉"); // 👈 เพิ่มตรงนี้
+                            }}
+                            >
+                            ADD TO CART
+                        </button>
+
+
+
+
+
+
+
+
                         
                         <p className="product-desc-text mt-4">
                             {product.product_detail || "สัมผัสประสบการณ์ความนุ่มสบายด้วยเนื้อผ้าเกรดพรีเมียม ระบายอากาศได้ดีเยี่ยม พร้อมดีไซน์ลิขสิทธิ์แท้"}

@@ -5,75 +5,213 @@ const db = require("./config/db");
 
 const app = express();
 
-// --- Middleware ---
+
+// ======================
+// Middleware
+// ======================
 app.use(cors());
 app.use(express.json());
 
-// --- จุดที่แก้ไข: การเข้าถึงไฟล์รูปภาพ ---
-// ใช้ path.resolve เพื่อให้มั่นใจว่าหาโฟลเดอร์เจอแน่นอน
-app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
-// --- 1. API สำหรับรายการสินค้า ---
-app.get('/api/products', (req, res) => {
+// ======================
+// Image Folder
+// ======================
+app.use(
+  "/images",
+  express.static(path.join(__dirname, "public", "images"))
+);
+
+
+// ======================
+// GET PRODUCTS
+// ======================
+app.get("/api/products", (req, res) => {
+
   const sql = `
-    SELECT p.*, s.product_size_name 
+    SELECT p.*, s.product_size_name
     FROM products p
-    LEFT JOIN product_size s ON p.product_size_id = s.product_size_id
+    LEFT JOIN product_size s
+    ON p.product_size_id = s.product_size_id
   `;
-  
+
   db.query(sql, (err, results) => {
-    if (err) {
-      console.error("DB Error:", err);
-      return res.status(500).json({ error: err.message });
-    }
+    if (err) return res.status(500).json(err);
     res.json(results);
   });
+
 });
 
-app.get('/api/product', (req, res) => {
-  res.redirect('/api/products');
+
+// ======================
+// CREATE ORDER
+// ======================
+app.post("/api/orders", (req, res) => {
+
+  console.log("BODY =", req.body);
+
+  const { cart, total, address, payment } = req.body;
+
+  console.log("CART DATA =", cart);
+
+  if (!cart || cart.length === 0)
+    return res.status(400).json({ message: "Cart empty" });
+
+  if (!address)
+    return res.status(400).json({ message: "Address required" });
+
+  const user_id = 1;
+
+  const orderSql = `
+    INSERT INTO orders
+    (user_id, order_date, total_price, status)
+    VALUES (?, NOW(), ?, ?)
+  `;
+
+  db.query(
+    orderSql,
+    [user_id, total, "pending"],
+    (err, result) => {
+
+      if (err) {
+        console.log(err);
+        return res.status(500).json(err);
+      }
+
+      const orderId = result.insertId;
+
+      const detailSql = `
+        INSERT INTO order_details
+        (order_id, product_id, quantity, subtotal)
+        VALUES ?
+      `;
+
+      const values = cart.map(item => [
+        orderId,
+        item.id,
+        item.quantity,
+        item.price * item.quantity
+      ]);
+
+      console.log(values);
+
+      db.query(detailSql, [values], (err2) => {
+
+        if (err2) {
+          console.log("DETAIL ERROR:", err2);
+          return res.status(500).json(err2);
+        }
+
+        res.json({
+          message: "Order created",
+          order_id: orderId
+        });
+
+      });
+
+    }
+  );
+
 });
 
-// --- 2. Routes อื่นๆ ---
-const authRoutes = require("./routes/auth");
-const productTypeRoutes = require("./routes/productType");
 
-app.use("/api", authRoutes);
-app.use("/api/product-types", productTypeRoutes);
+// ======================
+// GET ORDERS
+// ======================
+app.get("/api/orders", (req, res) => {
 
-// Test Route
-app.get("/", (req, res) => {
-  res.send("API running on port 5000");
+  const sql = `
+    SELECT
+      o.order_id,
+      o.total_price,
+      o.status,
+      p.product_name,
+      p.product_img,
+      od.quantity,
+      od.subtotal
+    FROM orders o
+    JOIN order_details od
+      ON o.order_id = od.order_id
+    JOIN products p
+      ON od.product_id = p.product_id
+    ORDER BY o.order_id DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+
 });
 
-const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  db.query("SELECT DATABASE()", (err, rows) => {
-    if (err) return console.error("DB Connection Error:", err);
-    console.log("ขณะนี้กำลังเชื่อมต่อกับฐานข้อมูลชื่อ:", rows[0]['DATABASE()']);
+
+// ======================
+// GET PRODUCT BY ID
+// ======================
+app.get("/api/products/:id", (req, res) => {
+
+  const sql = `SELECT * FROM products WHERE product_id = ?`;
+
+  db.query(sql, [req.params.id], (err, results) => {
+
+    if (err) return res.status(500).json(err);
+
+    if (results.length === 0)
+      return res.status(404).json({ message: "Not found" });
+
+    res.json(results[0]);
+  });
+
+});
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+
+  const sql = `
+    SELECT * FROM users
+    WHERE username = ? AND password = ?
+  `;
+
+  db.query(sql, [username, password], (err, results) => {
+    if (err) return res.status(500).json(err);
+
+    if (results.length === 0) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    res.json({
+      message: "Login success",
+      user: results[0]
+    });
   });
 });
 
-app.get('/api/products/:id', (req, res) => {
-  const { id } = req.params; // รับเลข ID จาก URL (เช่น เลข 1)
+app.put('/api/orders/cancel/:id', (req, res) => {
+  const orderId = req.params.id;
+
   const sql = `
-    SELECT p.*, s.product_size_name 
-    FROM products p 
-    LEFT JOIN product_size s ON p.product_size_id = s.product_size_id 
-    WHERE p.product_id = ?
+    UPDATE orders
+    SET status = 'cancelled'
+    WHERE order_id = ? AND status = 'pending'
   `;
 
-  db.query(sql, [id], (err, results) => {
-    if (err) {
-      console.error("DB Error:", err);
-      return res.status(500).json({ error: err.message });
-    }
-    
-    if (results.length === 0) {
-      return res.status(404).json({ message: "ไม่พบสินค้าชิ้นนี้" });
+  db.query(sql, [orderId], (err, result) => {
+    if (err) return res.status(500).json(err);
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ message: "ยกเลิกไม่ได้" });
     }
 
-    res.json(results[0]); // ส่งกลับไปแค่ Object เดียว (สินค้าตัวที่เลือก)
+    res.json({ message: "ยกเลิกสำเร็จ" });
+  });
+});
+
+
+// ======================
+app.listen(5000, () => {
+  console.log("Server running on port 5000");
+
+  db.query("SELECT DATABASE()", (err, rows) => {
+    if (!err)
+      console.log("Connected DB:", rows[0]["DATABASE()"]);
   });
 });

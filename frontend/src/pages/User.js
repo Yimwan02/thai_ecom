@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useContext} from "react";
 import axios from "axios";
 import { Link } from 'react-router-dom';
+import { CartContext } from "../context/CartContext";
 
 function User() {
   const user = JSON.parse(localStorage.getItem("user"));
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null); // <-- ตัวแปรที่หายไป
+  const { addToCart, cart } = useContext(CartContext);
 
   useEffect(() => {
     if (!user) {
@@ -51,7 +53,20 @@ function User() {
           </div>
           <div className="d-flex align-items-center">
             <span className="me-3 d-none d-sm-inline">สวัสดี, <b>{user?.username}</b></span>
-            <div className="fs-4 me-3" style={{ cursor: "pointer" }}>🛒</div>
+            
+            
+            
+          <Link to="/cart" style={{ textDecoration: "none", color: "white" }}>
+            <div className="fs-4 me-3" style={{ cursor: "pointer" }}>
+              🛒 ตะกร้า
+            </div>
+          </Link>
+            
+            
+            
+            
+            
+            
             <button onClick={handleLogout} className="btn btn-danger btn-sm rounded-pill px-3">
               Logout 🚪
             </button>
