@@ -253,3 +253,101 @@
     background-color: #e2e6ea;
     color: #000;
 }
+
+/* การตั้งค่าสีหลักของร้าน */
+:root {
+  --navy-dark: #000033;
+  --gold-changsuek: #c5a358;
+  --white: #ffffff;
+}
+
+/* ตกแต่ง Card สินค้า */
+.product-card {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* ทำให้เด้งแบบมีสปริง */
+  border-radius: 15px !important;
+  background-color: var(--white);
+  border: none !important;
+}
+
+/* เอฟเฟกต์ตอนเมาส์ชี้ (Hover) */
+.product-card:hover {
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(197, 163, 88, 0.25) !important;
+  z-index: 10;
+}
+
+/* ตกแต่งรูปภาพใน Card */
+.product-card img {
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover img {
+  transform: scale(1.1); /* รูปขยายขึ้นนิดนึงเวลาชี้ */
+}
+
+/* ตกแต่งปุ่มเพิ่มลงตะกร้า */
+.btn-cart {
+  background-color: var(--gold-changsuek) !important;
+  color: #000 !important;
+  border: none !important;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-cart:hover {
+  background-color: #b08d42 !important;
+  transform: scale(1.05);
+}
+
+/* ตกแต่งปุ่มรายละเอียด */
+.btn-outline-navy {
+  border: 1px solid var(--navy-dark) !important;
+  color: var(--navy-dark) !important;
+}
+
+.btn-outline-navy:hover {
+  background-color: var(--navy-dark) !important;
+  color: var(--white) !important;
+}
+
+/* แถบประเภทสินค้า (Category Bar) */
+.category-btn {
+  color: #000;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 5px 15px;
+  transition: 0.3s;
+  border-bottom: 2px solid transparent;
+}
+
+.category-btn:hover, .category-btn.active {
+  color: var(--navy-dark);
+  border-bottom: 2px solid var(--navy-dark);
+}
+
+/* แถบสีทอง */
+.category-container {
+  background-color: #c5a358;
+  padding: 15px 0;
+  display: flex;
+  justify-content: center;
+  gap: 15px; /* ระยะห่างระหว่างปุ่ม */
+}
+
+/* ปรับแต่งปุ่มให้โค้งมนเหมือนในรูป */
+.category-pill {
+  background-color: transparent;
+  border: none;
+  color: #000033;
+  font-weight: bold;
+  padding: 8px 25px;
+  border-radius: 50px; /* ทำให้ปุ่มโค้งเป็นวงรี */
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+/* เอฟเฟกต์ตอนเอาเมาส์ไปชี้ หรือตอนที่เลือกปุ่มนั้นอยู่ */
+.category-pill:hover, .category-pill.active {
+  background-color: rgba(0, 0, 51, 0.1); /* สีจางๆ เวลาชี้ */
+  transform: scale(1.05);
+}

@@ -34,39 +34,71 @@ function Register() {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card p-4 shadow" style={{ width: "400px" }}>
-        <h3 className="text-center mb-3">Register</h3>
-
-        <input
-          type="text"
-          className="form-control mb-2"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+    <div className="d-flex justify-content-center align-items-center vh-100 bg-white">
+      <div className="text-center" style={{ width: "350px" }}>
+        
+        {/* 1. โลโก้แมนยู (ใช้ตัวเดียวกับหน้า Login) */}
+        <img 
+          src="logo-thailand.jpg" 
+          alt="thai Logo" 
+          style={{ width: "120px", marginBottom: "20px" }} 
         />
 
-        <input
-          type="password"
-          className="form-control mb-3"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {/* 2. หัวข้อ Register */}
+        <h1 className="fw-bold mb-1" style={{ fontSize: "2.5rem", fontFamily: "serif" }}>Register</h1>
+        <p className="text-muted mb-4">
+          Join the Changsuek Shop
+        </p>
 
+        {/* 3. ช่องกรอกข้อมูลสไตล์โค้งมน (เหมือนหน้า Login) */}
+        <div className="mb-2">
+          <input
+            type="text"
+            className="form-control py-3 px-4 shadow-sm"
+            style={{ borderRadius: "15px", backgroundColor: "#f8f9fa", border: "1px solid #dee2e6" }}
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </div>
+
+        <div className="mb-4">
+          <input
+            type="password"
+            className="form-control py-3 px-4 shadow-sm"
+            style={{ borderRadius: "15px", backgroundColor: "#f8f9fa", border: "1px solid #dee2e6" }}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        {/* 4. ปุ่มสมัครสมาชิก (สีแดงหลัก) */}
         <button
-          className="btn btn-success w-100 mb-2"
+          className="btn btn-danger w-100 py-3 fw-bold shadow-sm mb-3"
+          style={{ 
+            borderRadius: "15px", 
+            backgroundColor: "#000033", // สีน้ำเงินเข้มขึ้นกว่า Continue เล็กน้อยเพื่อความชัดเจน
+            border: "none",
+            fontSize: "1.1rem"
+          }}
           onClick={handleRegister}
         >
-          สมัครสมาชิก
+          Sign Up
         </button>
 
-        <button
-          className="btn btn-outline-secondary w-100"
-          onClick={() => (window.location.href = "/")}
-        >
-          กลับไป Login
-        </button>
+        {/* 5. ลิงก์ย้อนกลับ */}
+        <p className="text-muted">
+          Already have an account? 
+          <span 
+            className="text-primary ms-1" 
+            style={{ cursor: "pointer", textDecoration: "none", fontWeight: "bold" }}
+            onClick={() => (window.location.href = "/")}
+          >
+            Log In
+          </span>
+        </p>
+
       </div>
     </div>
   );
