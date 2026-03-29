@@ -21,6 +21,13 @@ function AdminNavbar({ user, setPage }) {
         </button>
 
         <button
+          className="btn btn-outline-success btn-sm ms-2"
+          onClick={() => setPage("monthlyProductSales")}
+        >
+          💰 ยอดสินค้ารายเดือน
+        </button>
+
+        <button
           className="btn btn-outline-warning btn-sm"
           onClick={() => setPage("products")}
         >
