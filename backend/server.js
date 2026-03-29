@@ -10,6 +10,7 @@ const app = express();
 // ==========================================
 app.use(cors());
 app.use(express.json());
+app.use("/api", require("./routes/auth"));
 
 // ตั้งค่า Static Folder สำหรับรูปภาพ
 app.use("/images", express.static(path.join(__dirname, "public", "images")));

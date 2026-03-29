@@ -26,7 +26,7 @@ function Login() {
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card p-4 shadow" style={{ width: "300px" }}>
+      <div className="card p-4 shadow" style={{ width: "400px" }}>
         <h3 className="text-center mb-3">Login</h3>
 
         <input
@@ -42,7 +42,7 @@ function Login() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button className="btn btn-primary w-100" onClick={handleLogin}>
+        <button className="btn btn-primary w-100 mb-2" onClick={handleLogin}>
           Login
         </button>
 

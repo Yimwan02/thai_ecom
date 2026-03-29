@@ -2,6 +2,23 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import AdminNavbar from "../components/AdminNavbar";
 import ProductType from "./ProductType";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+} from "chart.js";
+
+ChartJS.register(
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+);
 
 function Admin() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -12,6 +29,9 @@ function Admin() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState(2);
   const [products, setProducts] = useState([]);
+  const [chartData, setChartData] = useState([]);
+
+
 
   useEffect(() => {
     if (!user || user.role_id !== 1) {
@@ -21,6 +41,7 @@ function Admin() {
     fetchUsers();
     fetchTypeCounts();
     fetchProducts();
+    fetchChart();
   }, [user]);
 
   const fetchUsers = async () => {
@@ -74,6 +95,31 @@ function Admin() {
     } catch (err) { alert("เปลี่ยน Role ไม่สำเร็จ"); }
   };
 
+  const monthNames = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun","Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const chartDataConfig = {labels: chartData.map(d => monthNames[d.month]),datasets: [{label: "จำนวนผู้ใช้",data: chartData.map(d => d.total),backgroundColor: "rgba(54, 162, 235, 0.6)"}]};
+
+  const fetchChart = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/users/stats/monthly");
+    setChartData(res.data);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+  const options = {
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        stepSize: 1, // 👈 บังคับทีละ 1
+        precision: 0 // 👈 ไม่เอาทศนิยม
+      }
+    }
+  }
+};
+
   return (
     <div className="bg-light min-vh-100 pb-5">
       <AdminNavbar user={user} setPage={setPage} />
@@ -114,6 +160,10 @@ function Admin() {
                 ))}
               </tbody>
             </table>
+             <div className="card p-3 mt-4">
+              <h5>📊 จำนวนผู้ใช้รายเดือน</h5>
+              <Bar data={chartDataConfig} options={options} />
+            </div>
 
             {/* ฟอร์มเพิ่มผู้ใช้ */}
             <div className="card p-3 shadow-sm border-0 mt-4">

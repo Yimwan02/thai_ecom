@@ -94,4 +94,20 @@ router.delete("/users/:id", (req, res) => {
   );
 });
 
+router.get("/users/stats/monthly", (req, res) => {
+  const sql = `
+    SELECT 
+      MONTH(created_at) AS month,
+      COUNT(*) AS total
+    FROM users
+    GROUP BY MONTH(created_at)
+    ORDER BY month
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json(result);
+  });
+});
+
 module.exports = router;

@@ -35,7 +35,7 @@ function Register() {
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card p-4 shadow" style={{ width: "320px" }}>
+      <div className="card p-4 shadow" style={{ width: "400px" }}>
         <h3 className="text-center mb-3">Register</h3>
 
         <input
