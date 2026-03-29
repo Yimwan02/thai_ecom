@@ -33,6 +33,8 @@ function Admin() {
   const [chartData, setChartData] = useState([]);
   const [sizes, setSizes] = useState([]);
 
+  const [salesSummary, setSalesSummary] = useState([]);
+
   // =========================
   // ส่วนที่เพิ่มใหม่สำหรับฟอร์มสินค้า
   // =========================
@@ -57,6 +59,7 @@ function Admin() {
     fetchProducts();
     fetchChart();
     fetchSizes();
+    fetchSalesSummary();
   }, [user]);
 
   const fetchUsers = async () => {
@@ -86,7 +89,14 @@ function Admin() {
       setSizes(res.data);
     } catch (err) { console.error(err); }
   };
-
+  const fetchSalesSummary = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/products/sales-summary");
+    setSalesSummary(res.data);
+  } catch (err) {
+    console.error("Fetch sales summary error:", err);
+  }
+  };
   const handleCreateUser = async () => {
     if (!newUsername || !newPassword) return alert("กรอกข้อมูลให้ครบ");
     try {
@@ -260,6 +270,7 @@ function Admin() {
       resetProductForm();
       fetchProducts();
       fetchTypeCounts();
+      fetchSalesSummary();
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.message || "บันทึกสินค้าไม่สำเร็จ");
@@ -275,6 +286,7 @@ function Admin() {
       alert("ลบสินค้าสำเร็จ");
       fetchProducts();
       fetchTypeCounts();
+      fetchSalesSummary();
 
       if (editingProductId === id) {
         resetProductForm();
@@ -554,6 +566,46 @@ function Admin() {
             </div>
           </div>
         )}
+        {page === "productSalesSummary" && (
+  <div className="mt-4">
+    <div className="card p-4 shadow-sm bg-white">
+      <h4 className="text-primary mb-4">📊 ยอดสั่งซื้อสินค้าแยกตามรายการสินค้า</h4>
+
+      <div className="table-responsive">
+        <table className="table table-hover table-bordered text-center align-middle">
+          <thead className="table-primary">
+            <tr>
+              <th>ID สินค้า</th>
+              <th>ชื่อสินค้า</th>
+              <th>จำนวนที่ถูกสั่งซื้อ</th>
+              <th>ยอดขายรวม</th>
+            </tr>
+          </thead>
+          <tbody>
+            {salesSummary.length > 0 ? (
+              salesSummary.map((item) => (
+                <tr key={item.product_id}>
+                  <td>{item.product_id}</td>
+                  <td className="fw-bold text-start">{item.product_name}</td>
+                  <td>{item.total_quantity}</td>
+                  <td className="text-success fw-bold">
+                    ฿{Number(item.total_sales || 0).toLocaleString()}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-muted">
+                  ยังไม่พบข้อมูลยอดขาย
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+)}
         {page === "monthlyProductSales" && <MonthlySalesChart />}
       </div>
     </div>

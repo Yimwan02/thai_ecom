@@ -22,7 +22,7 @@ function AdminNavbar({ user, setPage }) {
           className="btn btn-outline-success btn-sm ms-2"
           onClick={() => setPage("monthlyProductSales")}
         >
-          💰 ยอดสินค้ารายเดือน
+          💰 ยอดสั่งซื้อสินค้า
         </button>
         <button
           className="btn btn-outline-warning btn-sm"

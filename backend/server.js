@@ -74,7 +74,31 @@ app.get("/api/products", (req, res) => {
         res.json(results);
     });
 });
+app.get("/api/products/sales-summary", (req, res) => {
+  const sql = `
+    SELECT
+      p.product_id,
+      p.product_name,
+      p.product_img,
+      COALESCE(SUM(CASE WHEN o.status <> 'cancelled' THEN od.quantity ELSE 0 END), 0) AS total_quantity,
+      COALESCE(SUM(CASE WHEN o.status <> 'cancelled' THEN od.subtotal ELSE 0 END), 0) AS total_revenue,
+      COUNT(DISTINCT CASE WHEN o.status <> 'cancelled' THEN o.order_id END) AS total_orders,
+      MAX(CASE WHEN o.status <> 'cancelled' THEN o.order_date END) AS last_order_date
+    FROM products p
+    LEFT JOIN order_details od ON p.product_id = od.product_id
+    LEFT JOIN orders o ON od.order_id = o.order_id
+    GROUP BY p.product_id, p.product_name, p.product_img
+    ORDER BY total_quantity DESC, total_revenue DESC, p.product_id DESC
+  `;
 
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("Fetch Sales Summary Error:", err);
+      return res.status(500).json(err);
+    }
+    res.json(results);
+  });
+});
 app.get("/api/products/:id", (req, res) => {
     const sql = `SELECT * FROM products WHERE product_id = ?`;
     db.query(sql, [req.params.id], (err, results) => {
@@ -347,15 +371,17 @@ app.get("/api/orders/stats/monthly-products", (req, res) => {
     FROM orders o
     JOIN order_details od ON o.order_id = od.order_id
     JOIN products p ON od.product_id = p.product_id
+    WHERE o.status <> 'cancelled'
     GROUP BY MONTH(o.order_date), p.product_name
     ORDER BY MONTH(o.order_date), p.product_name
   `;
-  
+
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     res.json(results);
   });
 });
+
 
 // ==========================================
 // 7. Start Server
