@@ -6,7 +6,8 @@ function AdminNavbar({ user, setPage }) {
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-      <span className="navbar-brand">👑 Admin Panel</span>
+      <img src="/logo-thailand.jpg" alt="Logo" style={{ height: "50px", marginRight: "15px" }} />
+      <span className="navbar-brand"> Admin</span>
 
       <div className="ms-auto d-flex align-items-center gap-3">
         {/* MENU */}

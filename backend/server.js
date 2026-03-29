@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const db = require("./config/db");
+const { upload, removeImageIfExists } = require("./middlewares/upload");
 
 const app = express();
 
@@ -10,7 +11,12 @@ const app = express();
 // ==========================================
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use("/api", require("./routes/auth"));
+
+// เพิ่ม route file เดิมของโปรเจกต์
+app.use("/api/product-types", require("./routes/productType"));
+app.use("/api/sizes", require("./routes/size"));
 
 // ตั้งค่า Static Folder สำหรับรูปภาพ
 app.use("/images", express.static(path.join(__dirname, "public", "images")));
@@ -51,11 +57,17 @@ app.post('/api/register', (req, res) => {
 // 3. Products API
 // ==========================================
 
+// ดึงสินค้า + ชื่อประเภท + ชื่อไซส์
 app.get("/api/products", (req, res) => {
     const sql = `
-        SELECT p.*, s.product_size_name 
+        SELECT 
+            p.*,
+            pt.product_type_name,
+            s.product_size_name
         FROM products p 
+        LEFT JOIN product_type pt ON p.product_type_id = pt.product_type_id
         LEFT JOIN product_size s ON p.product_size_id = s.product_size_id
+        ORDER BY p.product_id DESC
     `;
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json(err);
@@ -72,8 +84,134 @@ app.get("/api/products/:id", (req, res) => {
     });
 });
 
+// ================= เพิ่มสินค้า =================
+// ส่วนนี้เพิ่มใหม่ ใช้ upload.single("product_img") เพื่อรับไฟล์รูปจากหน้าเว็บ
+app.post("/api/products/add", upload.single("product_img"), (req, res) => {
+    const { product_name, product_type_id, product_size_id, price } = req.body;
+    const imageName = req.file ? req.file.filename : null;
+
+    if (!product_name || !product_type_id || !product_size_id || !price) {
+        if (imageName) removeImageIfExists(imageName);
+        return res.status(400).json({ message: "กรอกข้อมูลสินค้าให้ครบ" });
+    }
+
+    const sql = `
+        INSERT INTO products (product_name, product_img, product_type_id, product_size_id, price)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+        sql,
+        [
+            product_name,
+            imageName,
+            Number(product_type_id),
+            Number(product_size_id),
+            Number(price)
+        ],
+        (err, result) => {
+            if (err) {
+                if (imageName) removeImageIfExists(imageName);
+                return res.status(500).json(err);
+            }
+            res.json({ message: "เพิ่มสินค้าสำเร็จ", id: result.insertId });
+        }
+    );
+});
+
+// ================= แก้ไขสินค้า =================
+// รองรับทั้งแก้ข้อมูลธรรมดา และเปลี่ยนรูปสินค้า
+app.put("/api/products/update/:id", upload.single("product_img"), (req, res) => {
+    const id = req.params.id;
+    const { product_name, product_type_id, product_size_id, price, keep_old_image } = req.body;
+    const newImageName = req.file ? req.file.filename : null;
+
+    db.query("SELECT * FROM products WHERE product_id = ?", [id], (findErr, rows) => {
+        if (findErr) {
+            if (newImageName) removeImageIfExists(newImageName);
+            return res.status(500).json(findErr);
+        }
+
+        if (rows.length === 0) {
+            if (newImageName) removeImageIfExists(newImageName);
+            return res.status(404).json({ message: "ไม่พบสินค้า" });
+        }
+
+        const oldProduct = rows[0];
+
+        const finalImageName = newImageName
+            ? newImageName
+            : keep_old_image === "false"
+            ? null
+            : oldProduct.product_img;
+
+        const sql = `
+            UPDATE products
+            SET product_name = ?, product_img = ?, product_type_id = ?, product_size_id = ?, price = ?
+            WHERE product_id = ?
+        `;
+
+        db.query(
+            sql,
+            [
+                product_name,
+                finalImageName,
+                Number(product_type_id),
+                Number(product_size_id),
+                Number(price),
+                Number(id)
+            ],
+            (updateErr) => {
+                if (updateErr) {
+                    if (newImageName) removeImageIfExists(newImageName);
+                    return res.status(500).json(updateErr);
+                }
+
+                // ถ้ามีรูปใหม่ ให้ลบรูปเก่าออก
+                if (newImageName && oldProduct.product_img && oldProduct.product_img !== newImageName) {
+                    removeImageIfExists(oldProduct.product_img);
+                }
+
+                // ถ้าเลือกไม่เก็บรูปเดิม และไม่ได้เลือกรูปใหม่ ให้ลบรูปเก่าทิ้ง
+                if (!newImageName && keep_old_image === "false" && oldProduct.product_img) {
+                    removeImageIfExists(oldProduct.product_img);
+                }
+
+                res.json({ message: "แก้ไขสินค้าสำเร็จ" });
+            }
+        );
+    });
+});
+
+// ================= ลบสินค้า =================
+// ต้องลบ order_details ที่อ้างถึงสินค้านี้ก่อน ไม่งั้นติด foreign key
+app.delete("/api/products/delete/:id", (req, res) => {
+    const id = req.params.id;
+
+    db.query("SELECT * FROM products WHERE product_id = ?", [id], (findErr, rows) => {
+        if (findErr) return res.status(500).json(findErr);
+        if (rows.length === 0) return res.status(404).json({ message: "ไม่พบสินค้า" });
+
+        const product = rows[0];
+
+        db.query("DELETE FROM order_details WHERE product_id = ?", [id], (detailErr) => {
+            if (detailErr) return res.status(500).json(detailErr);
+
+            db.query("DELETE FROM products WHERE product_id = ?", [id], (deleteErr) => {
+                if (deleteErr) return res.status(500).json(deleteErr);
+
+                if (product.product_img) {
+                    removeImageIfExists(product.product_img);
+                }
+
+                res.json({ message: "ลบสินค้าสำเร็จ" });
+            });
+        });
+    });
+});
+
 // ==========================================
-// 4. Orders API (ปรับปรุงให้ตรงกับตารางใน phpMyAdmin)
+// 4. Orders API
 // ==========================================
 
 // ดึงประวัติคำสั่งซื้อ
@@ -99,9 +237,8 @@ app.get("/api/orders", (req, res) => {
 // สร้างคำสั่งซื้อใหม่
 app.post("/api/orders", (req, res) => {
     const { cart, total } = req.body;
-    const user_id = 1; // สมมติ user_id เป็น 1 ตามโครงสร้างตารางของคุณ
+    const user_id = 1;
 
-    // ปรับ SQL ให้ตรงกับ Column: user_id, order_date, total_price, status
     const sqlOrder = "INSERT INTO orders (user_id, order_date, total_price, status) VALUES (?, NOW(), ?, 'pending')";
     
     db.query(sqlOrder, [user_id, total], (err, result) => {
@@ -112,7 +249,6 @@ app.post("/api/orders", (req, res) => {
 
         const orderId = result.insertId;
 
-        // บันทึกรายละเอียดลง order_details
         const sqlDetails = "INSERT INTO order_details (order_id, product_id, quantity, subtotal) VALUES ?";
         const values = cart.map(item => [
             orderId, 
@@ -161,6 +297,7 @@ app.get('/api/users', (req, res) => {
     });
 });
 
+// ของเดิมเก็บไว้เหมือนเดิมสำหรับหน้าแสดงสรุปประเภทสินค้า
 app.get('/api/product-types', (req, res) => {
     const sql = `
         SELECT pt.product_type_id, pt.product_type_name, COUNT(p.product_id) AS product_count
@@ -174,43 +311,18 @@ app.get('/api/product-types', (req, res) => {
     });
 });
 
-app.get("/api/orders/stats/monthly", (req, res) => {
-  const sql = `
-    SELECT MONTH(order_date) AS month, COUNT(*) AS total
-    FROM orders
-    GROUP BY MONTH(order_date)
-    ORDER BY MONTH(order_date)
-  `;
-  db.query(sql, (err, results) => {
+// ==========================================
+// 6. Error Handler สำหรับ multer
+// ==========================================
+app.use((err, req, res, next) => {
     if (err) {
-      console.error(err);
-      return res.status(500).send("Server error");
+        return res.status(400).json({ message: err.message || "อัปโหลดรูปไม่สำเร็จ" });
     }
-    res.json(results);
-  });
-});
-
-app.get("/api/orders/stats/monthly-products", (req, res) => {
-  const sql = `
-    SELECT 
-      MONTH(o.order_date) AS month, 
-      p.product_name,
-      SUM(od.quantity) AS total_quantity
-    FROM orders o
-    JOIN order_details od ON o.order_id = od.order_id
-    JOIN products p ON od.product_id = p.product_id
-    GROUP BY MONTH(o.order_date), p.product_name
-    ORDER BY MONTH(o.order_date), p.product_name
-  `;
-  
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+    next();
 });
 
 // ==========================================
-// 6. Start Server
+// 7. Start Server
 // ==========================================
 app.listen(5000, () => {
     console.log("-----------------------------------------");
