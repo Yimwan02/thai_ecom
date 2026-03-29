@@ -321,6 +321,42 @@ app.use((err, req, res, next) => {
     next();
 });
 
+
+app.get("/api/orders/stats/monthly", (req, res) => {
+  const sql = `
+    SELECT MONTH(order_date) AS month, COUNT(*) AS total
+    FROM orders
+    GROUP BY MONTH(order_date)
+    ORDER BY MONTH(order_date)
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Server error");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/api/orders/stats/monthly-products", (req, res) => {
+  const sql = `
+    SELECT 
+      MONTH(o.order_date) AS month, 
+      p.product_name,
+      SUM(od.quantity) AS total_quantity
+    FROM orders o
+    JOIN order_details od ON o.order_id = od.order_id
+    JOIN products p ON od.product_id = p.product_id
+    GROUP BY MONTH(o.order_date), p.product_name
+    ORDER BY MONTH(o.order_date), p.product_name
+  `;
+  
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+});
+
 // ==========================================
 // 7. Start Server
 // ==========================================

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import AdminNavbar from "../components/AdminNavbar";
 import ProductType from "./ProductType";
+import MonthlySalesChart from "../components/MonthlySalesChart";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -553,6 +554,7 @@ function Admin() {
             </div>
           </div>
         )}
+        {page === "monthlyProductSales" && <MonthlySalesChart />}
       </div>
     </div>
   );
