@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom';
 function User() {
   const user = JSON.parse(localStorage.getItem("user"));
   const [products, setProducts] = useState([]);
+  const [types, setTypes] = useState([]); // ✅ เพิ่มสำหรับเก็บประเภทสินค้าจาก DB
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -13,6 +15,7 @@ function User() {
       return;
     }
     fetchProducts();
+    fetchTypes(); // ✅ ดึงข้อมูลประเภทสินค้าเมื่อโหลดหน้า
   }, [user]);
 
   const fetchProducts = async () => {
@@ -24,11 +27,27 @@ function User() {
     }
   };
 
-  const scrollToProducts = () => {
-    const element = document.getElementById("product-list-section");
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+  // ✅ ดึงข้อมูลประเภทสินค้ามาจาก Database
+  const fetchTypes = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/product-types");
+      setTypes(res.data);
+    } catch (err) {
+      console.error("Fetch types error:", err);
     }
+  };
+
+  const scrollToProducts = (categoryId) => {
+    setIsLoading(true);
+    setSelectedCategory(categoryId);
+
+    setTimeout(() => {
+      const element = document.getElementById("product-list-section");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+      setIsLoading(false);
+    }, 300);
   };
 
   const handleLogout = () => {
@@ -64,7 +83,7 @@ function User() {
               letterSpacing: '1px',
               margin: 0,
               textTransform: 'uppercase',
-              background: 'linear-gradient(to right, #ffffff, #c5a358)', // ไล่สีขาวไปทอง
+              background: 'linear-gradient(to right, #ffffff, #c5a358)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
@@ -86,10 +105,10 @@ function User() {
         </div>
       </nav>
 
-      {/* 2. & 3. ส่วน Banner และ Category Bar ที่ลอยทับกัน */}
+      {/* 2. & 3. Banner และ Category Bar */}
       <div className="position-relative shadow-lg" style={{ height: "750px", overflow: "hidden" }}>
-
-        {/* แถบ Category ดีไซน์แบบโปร่งแสง ลอยอยู่บนรูป Banner */}
+        
+        {/* แถบ Category ดีไซน์ Glassmorphism ลอยอยู่บนรูป Banner */}
         <div className="category-container" style={{
           position: "absolute",
           top: 0,
@@ -100,15 +119,29 @@ function User() {
           padding: "15px 0"
         }}>
           <div className="container d-flex justify-content-center flex-wrap">
-            <button onClick={() => { setSelectedCategory(null); scrollToProducts(); }} className={`category-pill ${!selectedCategory ? 'active' : ''}`}>ทั้งหมด</button>
-            <button onClick={() => { setSelectedCategory(1); scrollToProducts(); }} className={`category-pill ${selectedCategory === 1 ? 'active' : ''}`}>เสื้อแข่ง</button>
-            <button onClick={() => { setSelectedCategory(2); scrollToProducts(); }} className={`category-pill ${selectedCategory === 2 ? 'active' : ''}`}>เสื้อซ้อม</button>
-            <button onClick={() => { setSelectedCategory(3); scrollToProducts(); }} className={`category-pill ${selectedCategory === 3 ? 'active' : ''}`}>เสื้อแข่ง Home</button>
-            <button onClick={() => { setSelectedCategory(4); scrollToProducts(); }} className={`category-pill ${selectedCategory === 4 ? 'active' : ''}`}>เสื้อแข่ง Away</button>
+            
+            {/* ปุ่ม "ทั้งหมด" */}
+            <button 
+              onClick={() => scrollToProducts(null)} 
+              className={`category-pill ${!selectedCategory ? 'active' : ''}`}
+            >
+              ทั้งหมด
+            </button>
+
+            {/* ✅ วนลูปสร้างปุ่มตามข้อมูลใน Database (ปุ่มจะขึ้นตาม Admin เพิ่มอัตโนมัติ) */}
+            {types.map((type) => (
+              <button 
+                key={type.product_type_id}
+                onClick={() => scrollToProducts(type.product_type_id)} 
+                className={`category-pill ${selectedCategory === type.product_type_id ? 'active' : ''}`}
+              >
+                {type.product_type_name}
+              </button>
+            ))}
+
           </div>
         </div>
 
-        {/* รูป Banner หลัก */}
         <img
           src="/banner-team.jpg"
           className="w-100 h-100"
@@ -116,7 +149,6 @@ function User() {
           alt="Main Banner"
         />
 
-        {/* Layer สีดำจางๆ ด้านล่างเพื่อให้ข้อความใน Section ต่อไปเด่นขึ้น */}
         <div style={{
           position: "absolute",
           bottom: 0,
@@ -130,11 +162,11 @@ function User() {
       {/* 4. Product List */}
       <div id="product-list-section" className="container pb-5" style={{ marginTop: "50px" }}>
         <h4 className="mb-4 border-start border-4 border-warning ps-3" style={{ color: "#c5a358" }}>
-          {selectedCategory ? "หมวดหมู่ที่เลือก" : "สินค้าแนะนำสำหรับคุณ"}
+          {isLoading ? "⏳ กำลังกรองสินค้า..." : selectedCategory ? "หมวดหมู่ที่เลือก" : "สินค้าแนะนำสำหรับคุณ"}
         </h4>
 
         <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-          {filteredProducts.map((p) => (
+          {!isLoading && filteredProducts.map((p) => (
             <div className="col" key={p.product_id}>
               <div className="card h-100 product-card shadow-sm border-0">
                 <Link to={`/product/${p.product_id}`}>
@@ -163,47 +195,36 @@ function User() {
             </div>
           ))}
         </div>
+        {!isLoading && filteredProducts.length === 0 && (
+            <div className="text-center py-5 text-white">ไม่พบสินค้าในหมวดหมู่นี้</div>
+        )}
       </div>
 
-      {/* --- 5. Footer (ส่วนล่างสุดของเว็บ) --- */}
+      {/* 5. Footer */}
       <footer style={{ backgroundColor: "#000022", color: "white", paddingTop: "50px", borderTop: "3px solid #c5a358" }}>
         <div className="container">
           <div className="row g-4">
             <div className="col-md-4">
               <h5 className="fw-bold mb-4" style={{ color: "#c5a358" }}>CHANGSUEK SHOP</h5>
-              <p className="small text-secondary">
-                ร้านค้าจำหน่ายสินค้าลิขสิทธิ์แท้จากทีมชาติไทย
-                เพื่อแฟนบอลช้างศึกทุกคน ร่วมสนับสนุนฟุตบอลไทยไปกับเรา
-              </p>
-              <div className="mt-4">
-                <span className="me-2 fs-4">🔴</span>
-                <span className="me-2 fs-4">⚪️</span>
-                <span className="me-2 fs-4">🔵</span>
-                <span className="me-2 fs-4">⚪️</span>
-                <span className="me-2 fs-4">🔴</span>
-              </div>
+              <p className="small text-secondary">ลิขสิทธิ์แท้จากทีมชาติไทย สนับสนุนฟุตบอลไทยไปกับเรา</p>
+              <div className="mt-4">🔴⚪️🔵⚪️🔴</div>
             </div>
             <div className="col-md-4 px-md-5">
               <h5 className="fw-bold mb-4" style={{ color: "#c5a358" }}>ช่วยเหลือ & ข้อมูล</h5>
-              <ul className="list-unstyled small">
-                <li className="mb-2"><span style={{ cursor: 'pointer' }} className="text-secondary">วิธีการสั่งซื้อ</span></li>
-                <li className="mb-2"><span style={{ cursor: 'pointer' }} className="text-secondary">ช่องทางการชำระเงิน</span></li>
-                <li className="mb-2"><span style={{ cursor: 'pointer' }} className="text-secondary">ตรวจสอบสถานะพัสดุ</span></li>
-                <li className="mb-2"><span style={{ cursor: 'pointer' }} className="text-secondary">นโยบายคืนสินค้า</span></li>
+              <ul className="list-unstyled small text-secondary">
+                <li className="mb-2">วิธีการสั่งซื้อ</li>
+                <li className="mb-2">ช่องทางการชำระเงิน</li>
+                <li className="mb-2">นโยบายคืนสินค้า</li>
               </ul>
             </div>
             <div className="col-md-4">
               <h5 className="fw-bold mb-4" style={{ color: "#c5a358" }}>ติดต่อเรา</h5>
               <p className="small mb-2 text-secondary">📍 มหาวิทยาลัยสงขลานครินทร์ วิทยาเขตหาดใหญ่</p>
               <p className="small mb-2 text-secondary">📞 โทร: 02-xxx-xxxx</p>
-              <p className="small mb-2 text-secondary">📧 Email: support@changsuek.com</p>
-              <p className="small mb-0 text-secondary">⏰ เวลาทำการ: จันทร์ - ศุกร์ (09:00 - 18:00)</p>
             </div>
           </div>
           <div className="text-center mt-5 py-3 border-top border-secondary">
-            <p className="small mb-0 text-secondary">
-              © 2026 <b>Changsuek Shop</b>. All Rights Reserved. พัฒนาโดย ทีมงาน Thai-Ecom
-            </p>
+            <p className="small mb-0 text-secondary">© 2026 Changsuek Shop. พัฒนาโดย ทีมงาน Thai-Ecom</p>
           </div>
         </div>
       </footer>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom'; // รวม import ไว้ด้วยกัน
+import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../App.css';
 import { CartContext } from "../context/CartContext";
@@ -9,24 +9,26 @@ const ProductDetail = () => {
     const [product, setProduct] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
     const [mainImage, setMainImage] = useState('');
+    const [availableSizes, setAvailableSizes] = useState([]); // ✅ เพิ่ม State เก็บไซส์จาก DB
     const { addToCart } = useContext(CartContext);
 
     useEffect(() => {
-        const fetchProduct = async () => {
+        const fetchProductData = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/products/${id}`);
-                const data = Array.isArray(res.data) ? res.data[0] : res.data;
-
+                // 1. ดึงรายละเอียดสินค้า
+                const resProduct = await axios.get(`http://localhost:5000/api/products/${id}`);
+                const data = Array.isArray(resProduct.data) ? resProduct.data[0] : resProduct.data;
                 setProduct(data);
+                if (data && data.product_img) setMainImage(data.product_img);
 
-                if (data && data.product_img) {
-                    setMainImage(data.product_img);
-                }
+                // 2. ✅ ดึงไซส์ทั้งหมดจาก Database (ตัวที่ Artty แก้ใน Admin)
+                const resSizes = await axios.get("http://localhost:5000/api/sizes");
+                setAvailableSizes(resSizes.data);
             } catch (err) {
-                console.error("Error fetching product:", err);
+                console.error("Error fetching data:", err);
             }
         };
-        fetchProduct();
+        fetchProductData();
     }, [id]);
 
     if (!product) return <div className="container mt-5 text-center">กำลังโหลดข้อมูล...</div>;
@@ -34,15 +36,11 @@ const ProductDetail = () => {
     return (
         <div className="product-page-bg">
             <div className="container py-5">
-                {/* เพิ่ม position-relative เพื่อให้ปุ่ม Back ลอยอยู่มุมขวาของกล่องนี้ได้ */}
                 <div className="row bg-white rounded-4 overflow-hidden shadow-lg position-relative">
-
-                    {/* --- ปุ่ม Back มุมขวาบน --- */}
-                    <Link to="/User" className="btn-back-detail">
+                    <Link to="/user" className="btn-back-detail">
                         <span>&larr;</span> Back
                     </Link>
 
-                    {/* ฝั่งซ้าย: รูปภาพ */}
                     <div className="col-md-7 p-4 d-flex flex-column align-items-center bg-light">
                         <div className="main-img-box">
                             <img
@@ -54,7 +52,6 @@ const ProductDetail = () => {
                         </div>
                     </div>
 
-                    {/* ฝั่งขวา: ข้อมูล */}
                     <div className="col-md-5 p-5 d-flex flex-column justify-content-center">
                         <span className="badge bg-gold text-dark mb-2 w-25">NEW ARRIVAL</span>
                         <h2 className="product-title">{product.product_name}</h2>
@@ -62,22 +59,19 @@ const ProductDetail = () => {
 
                         <div className="size-section mt-4">
                             <p className="fw-bold text-secondary">SELECT SIZE</p>
-                            <div className="d-flex gap-2">
-                                {['S', 'M', 'L', 'XL', '2XL'].map(size => (
+                            <div className="d-flex gap-2 flex-wrap">
+                                {/* ✅ เปลี่ยนจาก Hardcode เป็นการ Map จาก Database */}
+                                {availableSizes.map((s) => (
                                     <button
-                                        key={size}
-                                        className={`size-btn ${selectedSize === size ? 'active' : ''}`}
-                                        onClick={() => setSelectedSize(size)}
+                                        key={s.product_size_id}
+                                        className={`size-btn ${selectedSize === s.product_size_name ? 'active' : ''}`}
+                                        onClick={() => setSelectedSize(s.product_size_name)}
                                     >
-                                        {size}
+                                        {s.product_size_name}
                                     </button>
                                 ))}
                             </div>
                         </div>
-
-
-
-
 
                         <button
                             className="btn-buy-now mt-5"
@@ -90,7 +84,7 @@ const ProductDetail = () => {
                                     product_id: product.product_id,
                                     product_name: product.product_name,
                                     price: product.price,
-                                    product_img: product.product_img, // ✅ ส่งชื่อรูปไป
+                                    product_img: product.product_img,
                                     size: selectedSize
                                 });
                                 alert("เพิ่มลงตะกร้าสำเร็จ 🎉");
@@ -99,19 +93,10 @@ const ProductDetail = () => {
                             ADD TO CART
                         </button>
 
-
-
-
-
-
-
-
-
                         <p className="product-desc-text mt-4">
                             {product.product_detail || "สัมผัสประสบการณ์ความนุ่มสบายด้วยเนื้อผ้าเกรดพรีเมียม ระบายอากาศได้ดีเยี่ยม พร้อมดีไซน์ลิขสิทธิ์แท้"}
                         </p>
                     </div>
-
                 </div>
             </div>
         </div>

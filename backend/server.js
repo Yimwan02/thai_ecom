@@ -24,6 +24,16 @@ app.get('/api/users', (req, res) => {
     });
 });
 
+app.post("/api/register", (req, res) => {
+    const { username, password } = req.body;
+    const sql = "INSERT INTO users (username, password, role_id, created_at) VALUES (?, MD5(?), 2, NOW())";
+    
+    db.query(sql, [username, password], (err, result) => {
+        if (err) return res.status(500).json(err); // ส่ง Error 500 ถ้าชื่อซ้ำ
+        res.status(200).json({ message: "Register success" }); // ส่ง success
+    });
+});
+
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     const sql = `SELECT * FROM users WHERE username = ? AND password = MD5(?)`;
@@ -134,20 +144,40 @@ app.get("/api/products/:id", (req, res) => {
 // ==========================================
 
 // ✅ บันทึกคำสั่งซื้อ
-app.post("/api/orders", (req, res) => {
-    const { user_id, address, payment_method, total_amount, cartItems } = req.body;
-    const orderSql = "INSERT INTO orders (user_id, address, payment_method, total_amount, status, order_date) VALUES (?, ?, ?, ?, 'pending', NOW())";
-    
-    db.query(orderSql, [user_id || 1, address, payment_method, total_amount], (err, result) => {
-        if (err) return res.status(500).json(err);
-        const orderId = result.insertId;
-        const detailSql = "INSERT INTO order_details (order_id, product_id, quantity, subtotal) VALUES ?";
-        const detailValues = cartItems.map(item => [orderId, item.product_id, item.quantity, item.price * item.quantity]);
+// ✅ แก้ไข API ดึงประวัติการสั่งซื้อแยกตาม User
+app.get("/api/orders", (req, res) => {
+    // รับ user_id มาจาก Query string (เช่น /api/orders?user_id=5)
+    const { user_id } = req.query;
 
-        db.query(detailSql, [detailValues], (err2) => {
-            if (err2) return res.status(500).json(err2);
-            res.json({ message: "สั่งซื้อสำเร็จ!", order_id: orderId });
-        });
+    let sql = `
+        SELECT 
+            o.order_id, 
+            o.total_amount,
+            o.status, 
+            o.order_date,
+            od.quantity, 
+            od.subtotal,
+            p.product_name, 
+            p.product_img, 
+            p.price
+        FROM orders o
+        JOIN order_details od ON o.order_id = od.order_id
+        JOIN products p ON od.product_id = p.product_id
+    `;
+
+    // 🚩 ถ้ามีการส่ง user_id มา ให้กรองข้อมูลเฉพาะของคนนั้น
+    if (user_id) {
+        sql += ` WHERE o.user_id = ? `;
+    }
+
+    sql += ` ORDER BY o.order_date DESC `;
+
+    db.query(sql, [user_id], (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching orders:", err);
+            return res.status(500).json(err);
+        }
+        res.json(results);
     });
 });
 
@@ -227,6 +257,128 @@ app.put("/api/orders/cancel/:id", (req, res) => {
     });
 });
 
+// ✅ เปลี่ยน Role ผู้ใช้
+app.put('/api/users/:id', (req, res) => {
+    const { role_id } = req.body;
+    const sql = "UPDATE users SET role_id = ? WHERE user_id = ?";
+    db.query(sql, [role_id, req.params.id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "Update success" });
+    });
+});
+
+// ✅ ลบผู้ใช้
+app.delete('/api/users/:id', (req, res) => {
+    const sql = "DELETE FROM users WHERE user_id = ?";
+    db.query(sql, [req.params.id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "Delete success" });
+    });
+});
+
+// ✅ เพิ่มสินค้าใหม่
+app.post("/api/products/add", upload.single("product_img"), (req, res) => {
+    const { product_name, product_type_id, product_size_id, price } = req.body;
+    const product_img = req.file ? req.file.filename : null;
+    const sql = "INSERT INTO products (product_name, product_type_id, product_size_id, price, product_img) VALUES (?, ?, ?, ?, ?)";
+    db.query(sql, [product_name, product_type_id, product_size_id, price, product_img], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "Add product success" });
+    });
+});
+
+// ✅ แก้ไขสินค้า (รองรับการเปลี่ยนรูป)
+app.put("/api/products/update/:id", upload.single("product_img"), (req, res) => {
+    const { product_name, product_type_id, product_size_id, price } = req.body;
+    let sql = "UPDATE products SET product_name=?, product_type_id=?, product_size_id=?, price=? WHERE product_id=?";
+    let params = [product_name, product_type_id, product_size_id, price, req.params.id];
+
+    if (req.file) {
+        sql = "UPDATE products SET product_name=?, product_type_id=?, product_size_id=?, price=?, product_img=? WHERE product_id=?";
+        params = [product_name, product_type_id, product_size_id, price, req.file.filename, req.params.id];
+    }
+
+    db.query(sql, params, (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "Update product success" });
+    });
+});
+
+// ✅ 1. เพิ่มประเภทสินค้าใหม่ (Path: /api/product-types/add)
+app.post("/api/product-types/add", (req, res) => {
+    const { product_type_name } = req.body;
+    const sql = "INSERT INTO product_type (product_type_name) VALUES (?)";
+    db.query(sql, [product_type_name], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "เพิ่มสำเร็จ" });
+    });
+});
+
+// ✅ 2. แก้ไขประเภทสินค้า (Path: /api/product-types/update/:id)
+app.put("/api/product-types/update/:id", (req, res) => {
+    const { product_type_name } = req.body;
+    const sql = "UPDATE product_type SET product_type_name = ? WHERE product_type_id = ?";
+    db.query(sql, [product_type_name, req.params.id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "อัปเดตสำเร็จ" });
+    });
+});
+
+// ✅ 3. ลบประเภทสินค้า (Path: /api/product-types/delete/:id)
+app.delete("/api/product-types/delete/:id", (req, res) => {
+    const sql = "DELETE FROM product_type WHERE product_type_id = ?";
+    db.query(sql, [req.params.id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "ลบสำเร็จ" });
+    });
+});
+
+// ==========================================
+// 7. Size Management (เพิ่มเติมสำหรับหน้า SizeManager)
+// ==========================================
+
+// ✅ เพิ่มไซส์ใหม่
+app.post("/api/sizes/add", (req, res) => {
+    const { product_size_name } = req.body;
+    const sql = "INSERT INTO product_size (product_size_name) VALUES (?)";
+    db.query(sql, [product_size_name], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "Add size success", id: result.insertId });
+    });
+});
+
+// ✅ แก้ไขชื่อไซส์
+app.put("/api/sizes/update/:id", (req, res) => {
+    const { product_size_name } = req.body;
+    const sql = "UPDATE product_size SET product_size_name = ? WHERE product_size_id = ?";
+    db.query(sql, [product_size_name, req.params.id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "Update size success" });
+    });
+});
+
+// ✅ ลบไซส์
+app.delete("/api/sizes/delete/:id", (req, res) => {
+    const sql = "DELETE FROM product_size WHERE product_size_id = ?";
+    db.query(sql, [req.params.id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "Delete size success" });
+    });
+});
+
+// ✅ เพิ่ม API สำหรับแอดมินสร้างผู้ใช้ใหม่
+app.post("/api/users/add", (req, res) => {
+    const { username, password, role_id } = req.body;
+    // ใช้ MD5 ให้เหมือนกับตอน Login นะครับ
+    const sql = "INSERT INTO users (username, password, role_id, created_at) VALUES (?, MD5(?), ?, NOW())";
+    db.query(sql, [username, password, role_id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "ชื่อผู้ใช้อาจซ้ำหรือข้อมูลไม่ถูกต้อง" });
+        }
+        res.json({ message: "เพิ่มผู้ใช้สำเร็จ" });
+    });
+});
 // ==========================================
 // 6. Start Server
 // ==========================================

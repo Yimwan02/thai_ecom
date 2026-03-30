@@ -19,17 +19,19 @@ function Register() {
         password
       });
 
-      if (res.data.message === "Register success") {
+      // ✅ แก้เงื่อนไขให้ตรงกับที่ Server ส่งมา (หรือเช็ค status 200)
+      if (res.status === 200) {
         alert("สมัครสมาชิกสำเร็จ ✅");
-        window.location.href = "/";
-      } else if (res.data.message === "Username already exists") {
-        alert("Username นี้มีอยู่แล้ว ❗");
-      } else {
-        alert("สมัครไม่สำเร็จ ❌");
+        window.location.href = "/"; // กลับหน้า Login
       }
     } catch (err) {
       console.error(err);
-      alert("เกิดข้อผิดพลาด ❌");
+      // ✅ ถ้า Error 500 หรือชื่อซ้ำ
+      if (err.response && err.response.status === 500) {
+        alert("Username นี้มีอยู่แล้ว หรือข้อมูลไม่ถูกต้อง ❗");
+      } else {
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ ❌");
+      }
     }
   };
 
