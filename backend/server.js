@@ -139,74 +139,77 @@ app.get("/api/products/:id", (req, res) => {
     });
 });
 
+// ✅ API สำหรับลบสินค้า (Delete Product)
+app.delete("/api/products/delete/:id", (req, res) => {
+    const { id } = req.params;
+    const sql = "DELETE FROM products WHERE product_id = ?";
+    
+    db.query(sql, [id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "ลบสำเร็จ" });
+    });
+});
 // ==========================================
-// 4. Order System (Checkout & History)
+// 4. Order System (รวมทั้งดึงข้อมูล และ บันทึกออเดอร์)
 // ==========================================
 
-// ✅ บันทึกคำสั่งซื้อ
-// ✅ แก้ไข API ดึงประวัติการสั่งซื้อแยกตาม User
+// ✅ 4.1 API สำหรับดึงประวัติการสั่งซื้อ (GET) - แยกตาม User
 app.get("/api/orders", (req, res) => {
-    // รับ user_id มาจาก Query string (เช่น /api/orders?user_id=5)
-    const { user_id } = req.query;
+    const { user_id } = req.query; // รับค่าจาก ?user_id=...
 
     let sql = `
         SELECT 
-            o.order_id, 
-            o.total_amount,
-            o.status, 
-            o.order_date,
-            od.quantity, 
-            od.subtotal,
-            p.product_name, 
-            p.product_img, 
-            p.price
+            o.order_id, o.total_amount, o.status, o.order_date,
+            od.quantity, od.subtotal,
+            p.product_name, p.product_img, p.price
         FROM orders o
         JOIN order_details od ON o.order_id = od.order_id
         JOIN products p ON od.product_id = p.product_id
     `;
 
-    // 🚩 ถ้ามีการส่ง user_id มา ให้กรองข้อมูลเฉพาะของคนนั้น
+    // 🚩 กรองข้อมูล: ถ้าส่ง user_id มา ให้ดึงเฉพาะของคนนั้น (แยก User ตรงนี้!)
     if (user_id) {
         sql += ` WHERE o.user_id = ? `;
     }
-
     sql += ` ORDER BY o.order_date DESC `;
 
     db.query(sql, [user_id], (err, results) => {
-        if (err) {
-            console.error("❌ Error fetching orders:", err);
-            return res.status(500).json(err);
-        }
+        if (err) return res.status(500).json(err);
         res.json(results);
     });
 });
 
-// ✅ ดึงประวัติการสั่งซื้อแบบละเอียด (แก้ปัญหา NaN และรูปไม่ขึ้น)
-// ✅ แก้ไข SQL ให้ดึงค่าจาก total_amount (เพราะใน DB ของ Artty ตัวเลขอยู่ที่นี่)
-app.get("/api/orders", (req, res) => {
-    const sql = `
-        SELECT 
-            o.order_id, 
-            o.total_amount,        -- ✅ ดึงจากคอลัมน์ที่มีข้อมูลจริง
-            o.total_amount AS total, -- ✅ เผื่อ Frontend เรียกใช้ item.total
-            o.status, 
-            o.order_date,
-            od.quantity, 
-            od.subtotal,
-            p.product_name, 
-            p.product_img, 
-            p.price
-        FROM orders o
-        JOIN order_details od ON o.order_id = od.order_id
-        JOIN products p ON od.product_id = p.product_id
-        ORDER BY o.order_date DESC
-    `;
-    db.query(sql, (err, results) => {
+// ✅ 4.2 API สำหรับบันทึกคำสั่งซื้อใหม่ (POST) - ตัวที่ทำให้กดสั่งซื้อได้
+app.post("/api/orders", (req, res) => {
+    const { user_id, address, payment_method, total_amount, cartItems } = req.body;
+
+    // บันทึกลงตาราง orders (แม่)
+    const orderSql = "INSERT INTO orders (user_id, address, payment_method, total_amount, status, order_date) VALUES (?, ?, ?, ?, 'pending', NOW())";
+    
+    db.query(orderSql, [user_id, address, payment_method, total_amount], (err, result) => {
         if (err) {
-            console.error("❌ Error fetching orders:", err);
-            return res.status(500).json(err);
+            console.error("Insert Order Error:", err);
+            return res.status(500).json({ error: "บันทึกออเดอร์ไม่สำเร็จ" });
         }
-        res.json(results);
+
+        const orderId = result.insertId;
+        
+        // บันทึกลงตาราง order_details (ลูก)
+        const detailSql = "INSERT INTO order_details (order_id, product_id, quantity, subtotal) VALUES ?";
+        const detailValues = cartItems.map(item => [
+            orderId, 
+            item.product_id, 
+            item.quantity, 
+            (item.price * item.quantity)
+        ]);
+
+        db.query(detailSql, [detailValues], (err2) => {
+            if (err2) {
+                console.error("Insert Details Error:", err2);
+                return res.status(500).json({ error: "บันทึกรายละเอียดไม่สำเร็จ" });
+            }
+            res.json({ message: "สั่งซื้อสำเร็จ!", order_id: orderId });
+        });
     });
 });
 

@@ -10,38 +10,43 @@ function Checkout() {
 
   const handleOrder = async () => {
     if (cart.length === 0) { alert("ไม่มีสินค้าในตะกร้า"); return; }
-    if (!address) { alert("กรุณากรอกที่อยู่จัดส่ง"); return; }
+    if (!address) { alert("กรอกที่อยู่จัดส่งด้วยครับ Artty"); return; }
 
-    // ✅ 1. ดึงข้อมูล User จาก localStorage เพื่อเอา user_id
     const userData = JSON.parse(localStorage.getItem("user"));
     const userId = userData ? userData.user_id : null;
 
     try {
+      // ✅ ลบ URL เดิมออกแล้วใช้ตัวนี้ครับ (เน้นว่าต้องไม่มี :1 หรือตัวแปรต่อท้าย)
       const res = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: userId,          // ✅ ส่ง user_id ไปด้วย (ถ้าไม่มีจะเป็น null)
-          cartItems: cart,          // ✅ เปลี่ยนชื่อจาก cart เป็น cartItems ให้ตรงกับ Backend
-          total_amount: totalPrice, // ✅ เปลี่ยนชื่อจาก total เป็น total_amount
+          user_id: userId,
+          cartItems: cart,          
+          total_amount: totalPrice, 
           address: address,
-          payment_method: payment,  // ✅ เปลี่ยนชื่อจาก payment เป็น payment_method
+          payment_method: payment,  
         }),
       });
 
-      const data = await res.json(); // อ่าน response เผื่อมี error ส่งกลับมา
-
-      if (res.ok) {
-        alert("สั่งซื้อสำเร็จ 🎉 ขอบคุณที่ใช้บริการครับ");
-        clearCart();
-        navigate("/orders");
+      // เช็คว่า Response ที่ส่งกลับมาเป็น JSON จริงไหม
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await res.json();
+        if (res.ok) {
+          alert("สั่งซื้อสำเร็จ 🎉 ของกำลังไปส่งครับ!");
+          clearCart();
+          navigate("/orders");
+        } else {
+          alert("เกิดข้อผิดพลาด: " + (data.message || "กรุณาลองใหม่"));
+        }
       } else {
-        // ถ้า Backend ส่ง error มา ให้แจ้งเตือนตามนั้น
-        alert("เกิดข้อผิดพลาด: " + (data.error || "กรุณาลองใหม่อีกครั้ง"));
+        // ถ้าไม่ใช่ JSON แสดงว่า URL ผิดจน Server ส่งหน้า Error HTML มา
+        alert("Server หาทางไปไม่เจอ (404) ลอง Restart Backend ดูครับ");
       }
     } catch (error) {
       console.error("Fetch Error:", error);
-      alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+      alert("เชื่อมต่อ Server ไม่ได้ครับ Artty");
     }
   };
 
