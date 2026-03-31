@@ -21,6 +21,18 @@ function Orders() {
       .catch(err => console.error(err));
   };
 
+  const handleEditOrder = async (order, id) => {
+    if (!window.confirm("ต้องการแก้ไขออเดอร์นี้ใช่ไหม? (ระบบจะยกเลิกออเดอร์เดิมและพาคุณไปหน้าตะกร้า)")) return;
+    try {
+      await fetch(`http://localhost:5000/api/orders/cancel/${id}`, { method: 'PUT' });
+      navigate('/Checkout'); 
+    } catch (err) {
+      console.error("Edit error:", err);
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    }
+  };
+
+
   // 2. แยกฟังก์ชันดึงข้อมูลออกมาเพื่อให้เรียกใช้ซ้ำได้
   const fetchOrders = async () => {
     try {
@@ -106,14 +118,28 @@ function Orders() {
                     <h5 className="fw-bold mb-0">ยอดรวมทั้งหมด: <span className="text-primary">฿{Number(order.total_amount || 0).toLocaleString()}</span></h5>
 
                     {order.status === "pending" && (
-                      <button
-                        className="btn btn-danger btn-sm px-3 fw-bold shadow-sm"
-                        style={{ borderRadius: '8px' }}
-                        onClick={() => cancelOrder(orderId)}
-                      >
-                        ยกเลิกคำสั่งซื้อ
-                      </button>
+                      <div className="d-flex gap-2"> 
+                        {/* ปุ่มแก้ไข  */}
+                        <button
+                          className="btn btn-warning btn-sm px-3 fw-boldshadow-sm"
+                          style={{ borderRadius: '8px' }}
+                          onClick={() => handleEditOrder(order, orderId)}
+                        >
+                          แก้ไขคำสั่งซื้อ
+                        </button>
+
+                        {/* ปุ่มยกเลิก*/}
+                        <button
+                          className="btn btn-danger btn-sm px-3 fw-bold shadow-sm"
+                          style={{ borderRadius: '8px' }}
+                          onClick={() => cancelOrder(orderId)}
+                        >
+                          ยกเลิกคำสั่งซื้อ
+                        </button>
+                        
+                      </div>
                     )}
+
                   </div>
                 </div>
               </div>
