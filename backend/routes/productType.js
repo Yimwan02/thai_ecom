@@ -49,7 +49,7 @@ router.delete('/delete/:id', (req, res) => {
     });
 });
 
-// 4. แก้ไขประเภทสินค้า (เพิ่มให้ตามโจทย์ Scope ในรูปแรกของคุณ)
+// 4. แก้ไขประเภทสินค้า 
 router.put('/update/:id', (req, res) => {
     const id = req.params.id;
     const { product_type_name } = req.body;

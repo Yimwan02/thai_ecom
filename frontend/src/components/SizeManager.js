@@ -55,7 +55,7 @@ function SizeManager() {
             alert("ลบสำเร็จ");
         } catch (err) {
             console.error(err);
-            alert("ลบไม่สำเร็จ");
+            alert("ลบไม่สำเร็จ เพราะมีorder อยู่ในร้านค้า!!");
         }
     };
 

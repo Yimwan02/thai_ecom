@@ -13,6 +13,7 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
+import { use } from "react";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -78,24 +79,23 @@ function Admin() {
     fetchData();
   }, []);
 
-  // ==========================================
   // 2. จัดการผู้ใช้ (User Logic)
-  // ==========================================
+
   const handleCreateUser = async () => {
     if (!newUsername || !newPassword) return alert("กรอกข้อมูลให้ครบ");
     try {
-      // ✅ แก้ Path เป็น /api/users/add ให้ตรงกับ Server
+      //  แก้ Path เป็น /api/users/add ให้ตรงกับ Server
       await axios.post("http://localhost:5000/api/users/add", {
         username: newUsername,
         password: newPassword,
         role_id: Number(newRole)
       });
       alert("เพิ่มผู้ใช้สำเร็จ ✨");
-      setNewUsername(""); 
+      setNewUsername("");
       setNewPassword("");
       fetchData(); // รีโหลดข้อมูลทั้งหมด
-    } catch (err) { 
-      alert("เพิ่มไม่สำเร็จ: ชื่อผู้ใช้อาจซ้ำกัน"); 
+    } catch (err) {
+      alert("เพิ่มไม่สำเร็จ: ชื่อผู้ใช้อาจซ้ำกัน");
     }
   };
 
@@ -104,19 +104,19 @@ function Admin() {
     try {
       await axios.delete(`http://localhost:5000/api/users/${id}`);
       fetchData();
-    } catch (err) { alert("ลบไม่สำเร็จ"); }
+    } catch (err) { alert("user นี้มีการสั่งซื้อหรือมีประวัติในร้านค้า!!"); }
   };
 
   const handleRoleChange = async (id, role_id) => {
+    if (!window.confirm("ยืนยันที่เปลี่ยนroleใช่มั้ย?")) return;
     try {
       await axios.put(`http://localhost:5000/api/users/${id}`, { role_id: Number(role_id) });
       fetchData();
     } catch (err) { alert("เปลี่ยน Role ไม่สำเร็จ"); }
   };
 
-  // ==========================================
   // 3. จัดการสินค้า (Product Logic)
-  // ==========================================
+
   const resetProductForm = () => {
     setEditingProductId(null); setProductName(""); setProductTypeId("");
     setProductSizeId(""); setProductPrice(""); setProductImage(null);
@@ -126,7 +126,7 @@ function Admin() {
   const handleSubmitProduct = async (e) => {
     e.preventDefault();
     if (!productName || !productTypeId || !productSizeId || !productPrice) return alert("กรอกข้อมูลให้ครบ");
-    
+
     const formData = new FormData();
     formData.append("product_name", productName);
     formData.append("product_type_id", productTypeId);
@@ -146,9 +146,36 @@ function Admin() {
     } catch (err) { alert("บันทึกไม่สำเร็จ"); }
   };
 
-  // ==========================================
+  const handleDeleteProduct = async (id) => {
+    // 1. ถามยืนยันก่อนลบ (เพื่อความปลอดภัย)
+    if (!window.confirm("ยืนยันการลบสินค้าชิ้นนี้?")) return;
+
+    try {
+      // 2. ส่ง Request ไปที่ Backend
+      // เช็ค URL ให้ตรงกับที่ Backend ตั้งไว้นะครับ (เช่น /api/products/delete/9)
+      await axios.delete(`http://localhost:5000/api/products/delete/${id}`);
+
+      // 3. ถ้าลบสำเร็จ (Success)
+      alert("ลบสินค้าเรียบร้อยแล้ว!");
+      fetchData(); // โหลดรายการสินค้าใหม่มาแสดง
+
+    } catch (err) {
+      // 4. 🔥 จุดสำคัญ: ส่วนดักจับ Error ไม่ให้หน้าจอแดง
+      // เมื่อเกิด Error 500 (เช่น ติด Foreign Key ใน DB) มันจะวิ่งมาที่นี่ทันที
+
+      console.error("Log ไว้ดูสาเหตุ:", err);
+
+      // ดึงข้อความ Error มาโชว์เป็น Alert แทนหน้าจอแดงๆ
+      const errorMsg = err.response?.data?.message || "ลบไม่สำเร็จ! สินค้านี้อาจถูกสั่งซื้อไปแล้ว หรือมีข้อมูลไซส์ผูกอยู่";
+
+      alert("แจ้งเตือน: " + errorMsg);
+
+      // **ห้ามเขียน throw err; ไว้ในนี้เด็ดขาด เพราะจะทำให้หน้าจอแดงเหมือนเดิม**
+    }
+  };
+
   // 4. ส่วนแสดงผล (UI)
-  // ==========================================
+
   return (
     <div className="bg-light min-vh-100 pb-5">
       <AdminNavbar user={user} setPage={setPage} />
@@ -169,7 +196,7 @@ function Admin() {
                       <td>{u.user_id}</td>
                       <td>{u.username}</td>
                       <td>
-                        <select className="form-select mx-auto" style={{ width: '120px' }} 
+                        <select className="form-select mx-auto" style={{ width: '120px' }}
                           value={u.role_id} onChange={(e) => handleRoleChange(u.user_id, e.target.value)}>
                           <option value="1">Admin</option>
                           <option value="2">User</option>
@@ -184,12 +211,12 @@ function Admin() {
 
             <div className="card p-3 mt-4 shadow-sm border-0">
               <h5>📊 จำนวนผู้ใช้รายเดือน</h5>
-              <Bar 
+              <Bar
                 data={{
                   labels: chartData.map(d => ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.month]),
                   datasets: [{ label: "ผู้ใช้ใหม่", data: chartData.map(d => d.total), backgroundColor: "#36a2eb" }]
-                }} 
-                options={{ scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }} 
+                }}
+                options={{ scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }}
               />
             </div>
 
@@ -249,7 +276,7 @@ function Admin() {
               {products.map((p) => (
                 <div className="col" key={p.product_id}>
                   <div className="card h-100 shadow-sm border-0">
-                    <div className="p-3 bg-light text-center" style={{height: '200px'}}><img src={p.product_img ? `http://localhost:5000/images/${p.product_img}` : "https://placehold.co/150"} className="img-fluid h-100" style={{objectFit: 'contain'}} alt={p.product_name} /></div>
+                    <div className="p-3 bg-light text-center" style={{ height: '200px' }}><img src={p.product_img ? `http://localhost:5000/images/${p.product_img}` : "https://placehold.co/150"} className="img-fluid h-100" style={{ objectFit: 'contain' }} alt={p.product_name} /></div>
                     <div className="card-body">
                       <h6 className="fw-bold">{p.product_name}</h6>
                       <div className="small text-muted mb-2">{p.product_type_name} | {p.product_size_name}</div>
@@ -257,21 +284,21 @@ function Admin() {
                     </div>
                     <div className="card-footer bg-white border-0 d-flex gap-2 pb-3">
                       <button className="btn btn-outline-warning btn-sm w-100" onClick={() => {
-                         setEditingProductId(p.product_id);
-                         setProductName(p.product_name);
-                         setProductTypeId(String(p.product_type_id));
-                         setProductSizeId(String(p.product_size_id));
-                         setProductPrice(p.price);
-                         setPreviewImage(p.product_img ? `http://localhost:5000/images/${p.product_img}` : "");
-                         setShowProductForm(true);
-                         window.scrollTo(0,0);
+                        setEditingProductId(p.product_id);
+                        setProductName(p.product_name);
+                        setProductTypeId(String(p.product_type_id));
+                        setProductSizeId(String(p.product_size_id));
+                        setProductPrice(p.price);
+                        setPreviewImage(p.product_img ? `http://localhost:5000/images/${p.product_img}` : "");
+                        setShowProductForm(true);
+                        window.scrollTo(0, 0);
                       }}>แก้ไข</button>
-                      <button className="btn btn-outline-danger btn-sm w-100" onClick={async () => {
-                        if(window.confirm("ต้องการลบสินค้า?")) {
-                          await axios.delete(`http://localhost:5000/api/products/delete/${p.product_id}`);
-                          fetchData();
-                        }
-                      }}>ลบ</button>
+                      <button
+                        className="btn btn-outline-danger btn-sm w-100"
+                        onClick={() => handleDeleteProduct(p.product_id)}
+                      >
+                        ลบ
+                      </button>
                     </div>
                   </div>
                 </div>

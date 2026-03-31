@@ -13,9 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 // ตั้งค่า Static Folder สำหรับรูปภาพ
 app.use("/images", express.static(path.join(__dirname, "public", "images")));
 
-// ==========================================
 // 1. Authentication & Users
-// ==========================================
 app.get('/api/users', (req, res) => {
     const sql = "SELECT user_id, username, role_id FROM users"; 
     db.query(sql, (err, results) => {
@@ -44,6 +42,56 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+//  เปลี่ยน Role ผู้ใช้
+app.put('/api/users/:id', (req, res) => {
+    const { role_id } = req.body;
+    const sql = "UPDATE users SET role_id = ? WHERE user_id = ?";
+    db.query(sql, [role_id, req.params.id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ message: "Update success" });
+    });
+});
+
+//  ลบผู้ใช้
+app.delete('/api/users/:id', (req, res) => {
+    const userId = req.params.id;
+    const sql = "DELETE FROM users WHERE user_id = ?";
+
+    db.query(sql, [userId], (err, result) => {
+        if (err) {
+            // 1. Log ดูใน Terminal ว่า Error จริงๆ คืออะไร (สำคัญมาก)
+            console.error("DB Error:", err); 
+            
+            // 2. ส่ง Error กลับไปแบบที่อ่านออก เช่น string หรือ object เฉพาะส่วน
+            return res.status(500).json({ 
+                error: "Database error", 
+                detail: err.message // ส่งแค่ message ออกไปจะปลอดภัยกว่า
+            });
+        }
+
+        // 3. เช็คว่ามีแถวที่ถูกลบจริงไหม (ถ้าส่ง ID ที่ไม่มีอยู่จริงมา)
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "ไม่พบ User ID นี้ในระบบ" });
+        }
+
+        res.json({ message: "Delete success" });
+    });
+});
+
+//  เพิ่ม API สำหรับแอดมินสร้างผู้ใช้ใหม่
+app.post("/api/users/add", (req, res) => {
+    const { username, password, role_id } = req.body;
+    // ใช้ MD5 ให้เหมือนกับตอน Login นะครับ
+    const sql = "INSERT INTO users (username, password, role_id, created_at) VALUES (?, MD5(?), ?, NOW())";
+    db.query(sql, [username, password, role_id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "ชื่อผู้ใช้อาจซ้ำหรือข้อมูลไม่ถูกต้อง" });
+        }
+        res.json({ message: "เพิ่มผู้ใช้สำเร็จ" });
+    });
+});
+
 app.get("/api/users/stats/monthly", (req, res) => {
     const sql = `SELECT MONTH(created_at) AS month, COUNT(*) AS total FROM users GROUP BY MONTH(created_at) ORDER BY month`;
     db.query(sql, (err, results) => {
@@ -56,11 +104,9 @@ app.get("/api/users/stats/monthly", (req, res) => {
     });
 });
 
-// ==========================================
-// 2. Special Reports & Stats (วางไว้ก่อน Route ที่มี :id)
-// ==========================================
+// 2. Special Reports & Stats 
 
-// ✅ สรุปยอดขาย (Admin Dashboard)
+//  สรุปยอดขาย (Admin Dashboard)
 app.get("/api/products/sales-summary", (req, res) => {
     const sql = `
         SELECT
@@ -82,7 +128,7 @@ app.get("/api/products/sales-summary", (req, res) => {
     });
 });
 
-// ✅ สรุปจำนวนแยกตามไซส์
+//  สรุปจำนวนแยกตามไซส์
 app.get("/api/products/size-counts", (req, res) => {
     const sql = `
         SELECT s.product_size_name, COUNT(p.product_id) AS product_count 
@@ -96,7 +142,7 @@ app.get("/api/products/size-counts", (req, res) => {
     });
 });
 
-// ✅ กราฟยอดสั่งซื้อรายเดือนแยกตามสินค้า
+//  กราฟยอดสั่งซื้อรายเดือนแยกตามสินค้า
 app.get("/api/orders/stats/monthly-products", (req, res) => {
     const sql = `
         SELECT MONTH(o.order_date) AS month, SUM(od.quantity) AS total_quantity 
@@ -111,11 +157,9 @@ app.get("/api/orders/stats/monthly-products", (req, res) => {
     });
 });
 
-// ==========================================
 // 3. Products Management
-// ==========================================
 
-// ✅ ดึงสินค้าทั้งหมด
+//  ดึงสินค้าทั้งหมด
 app.get("/api/products", (req, res) => {
     const sql = `
         SELECT p.*, pt.product_type_name, s.product_size_name
@@ -130,7 +174,7 @@ app.get("/api/products", (req, res) => {
     });
 });
 
-// ✅ ดึงสินค้าตาม ID
+//  ดึงสินค้าตาม ID
 app.get("/api/products/:id", (req, res) => {
     const sql = `SELECT * FROM products WHERE product_id = ?`;
     db.query(sql, [req.params.id], (err, results) => {
@@ -139,7 +183,7 @@ app.get("/api/products/:id", (req, res) => {
     });
 });
 
-// ✅ API สำหรับลบสินค้า (Delete Product)
+//  API สำหรับลบสินค้า (Delete Product)
 app.delete("/api/products/delete/:id", (req, res) => {
     const { id } = req.params;
     const sql = "DELETE FROM products WHERE product_id = ?";
@@ -149,11 +193,9 @@ app.delete("/api/products/delete/:id", (req, res) => {
         res.json({ message: "ลบสำเร็จ" });
     });
 });
-// ==========================================
 // 4. Order System (รวมทั้งดึงข้อมูล และ บันทึกออเดอร์)
-// ==========================================
 
-// ✅ 4.1 API สำหรับดึงประวัติการสั่งซื้อ (GET) - แยกตาม User
+//  4.1 API สำหรับดึงประวัติการสั่งซื้อ (GET) - แยกตาม User
 app.get("/api/orders", (req, res) => {
     const { user_id } = req.query; // รับค่าจาก ?user_id=...
 
@@ -167,7 +209,7 @@ app.get("/api/orders", (req, res) => {
         JOIN products p ON od.product_id = p.product_id
     `;
 
-    // 🚩 กรองข้อมูล: ถ้าส่ง user_id มา ให้ดึงเฉพาะของคนนั้น (แยก User ตรงนี้!)
+    //  กรองข้อมูล: ถ้าส่ง user_id มา ให้ดึงเฉพาะของคนนั้น แยก User ตรงนี้
     if (user_id) {
         sql += ` WHERE o.user_id = ? `;
     }
@@ -179,7 +221,7 @@ app.get("/api/orders", (req, res) => {
     });
 });
 
-// ✅ 4.2 API สำหรับบันทึกคำสั่งซื้อใหม่ (POST) - ตัวที่ทำให้กดสั่งซื้อได้
+//  4.2 API สำหรับบันทึกคำสั่งซื้อใหม่ (POST)
 app.post("/api/orders", (req, res) => {
     const { user_id, address, payment_method, total_amount, cartItems } = req.body;
 
@@ -213,9 +255,7 @@ app.post("/api/orders", (req, res) => {
     });
 });
 
-// ==========================================
 // 5. Product Types & Sizes & Stats
-// ==========================================
 
 app.get('/api/product-types', (req, res) => {
     const sql = `
@@ -245,7 +285,7 @@ app.get("/api/orders/stats/monthly", (req, res) => {
     });
 });
 
-// ✅ เพิ่ม API สำหรับยกเลิกออเดอร์
+//  เพิ่ม API สำหรับยกเลิกออเดอร์
 app.put("/api/orders/cancel/:id", (req, res) => {
     const orderId = req.params.id;
     // ปรับสถานะเป็น 'cancelled'
@@ -260,26 +300,8 @@ app.put("/api/orders/cancel/:id", (req, res) => {
     });
 });
 
-// ✅ เปลี่ยน Role ผู้ใช้
-app.put('/api/users/:id', (req, res) => {
-    const { role_id } = req.body;
-    const sql = "UPDATE users SET role_id = ? WHERE user_id = ?";
-    db.query(sql, [role_id, req.params.id], (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json({ message: "Update success" });
-    });
-});
 
-// ✅ ลบผู้ใช้
-app.delete('/api/users/:id', (req, res) => {
-    const sql = "DELETE FROM users WHERE user_id = ?";
-    db.query(sql, [req.params.id], (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json({ message: "Delete success" });
-    });
-});
-
-// ✅ เพิ่มสินค้าใหม่
+//  เพิ่มสินค้าใหม่
 app.post("/api/products/add", upload.single("product_img"), (req, res) => {
     const { product_name, product_type_id, product_size_id, price } = req.body;
     const product_img = req.file ? req.file.filename : null;
@@ -290,7 +312,7 @@ app.post("/api/products/add", upload.single("product_img"), (req, res) => {
     });
 });
 
-// ✅ แก้ไขสินค้า (รองรับการเปลี่ยนรูป)
+//  แก้ไขสินค้า (รองรับการเปลี่ยนรูป)
 app.put("/api/products/update/:id", upload.single("product_img"), (req, res) => {
     const { product_name, product_type_id, product_size_id, price } = req.body;
     let sql = "UPDATE products SET product_name=?, product_type_id=?, product_size_id=?, price=? WHERE product_id=?";
@@ -307,7 +329,7 @@ app.put("/api/products/update/:id", upload.single("product_img"), (req, res) => 
     });
 });
 
-// ✅ 1. เพิ่มประเภทสินค้าใหม่ (Path: /api/product-types/add)
+//  1. เพิ่มประเภทสินค้าใหม่ (Path: /api/product-types/add)
 app.post("/api/product-types/add", (req, res) => {
     const { product_type_name } = req.body;
     const sql = "INSERT INTO product_type (product_type_name) VALUES (?)";
@@ -317,7 +339,7 @@ app.post("/api/product-types/add", (req, res) => {
     });
 });
 
-// ✅ 2. แก้ไขประเภทสินค้า (Path: /api/product-types/update/:id)
+//  2. แก้ไขประเภทสินค้า (Path: /api/product-types/update/:id)
 app.put("/api/product-types/update/:id", (req, res) => {
     const { product_type_name } = req.body;
     const sql = "UPDATE product_type SET product_type_name = ? WHERE product_type_id = ?";
@@ -327,7 +349,7 @@ app.put("/api/product-types/update/:id", (req, res) => {
     });
 });
 
-// ✅ 3. ลบประเภทสินค้า (Path: /api/product-types/delete/:id)
+//  3. ลบประเภทสินค้า (Path: /api/product-types/delete/:id)
 app.delete("/api/product-types/delete/:id", (req, res) => {
     const sql = "DELETE FROM product_type WHERE product_type_id = ?";
     db.query(sql, [req.params.id], (err, result) => {
@@ -336,11 +358,9 @@ app.delete("/api/product-types/delete/:id", (req, res) => {
     });
 });
 
-// ==========================================
 // 7. Size Management (เพิ่มเติมสำหรับหน้า SizeManager)
-// ==========================================
 
-// ✅ เพิ่มไซส์ใหม่
+//  เพิ่มไซส์ใหม่
 app.post("/api/sizes/add", (req, res) => {
     const { product_size_name } = req.body;
     const sql = "INSERT INTO product_size (product_size_name) VALUES (?)";
@@ -350,7 +370,7 @@ app.post("/api/sizes/add", (req, res) => {
     });
 });
 
-// ✅ แก้ไขชื่อไซส์
+//  แก้ไขชื่อไซส์
 app.put("/api/sizes/update/:id", (req, res) => {
     const { product_size_name } = req.body;
     const sql = "UPDATE product_size SET product_size_name = ? WHERE product_size_id = ?";
@@ -360,7 +380,7 @@ app.put("/api/sizes/update/:id", (req, res) => {
     });
 });
 
-// ✅ ลบไซส์
+//  ลบไซส์
 app.delete("/api/sizes/delete/:id", (req, res) => {
     const sql = "DELETE FROM product_size WHERE product_size_id = ?";
     db.query(sql, [req.params.id], (err, result) => {
@@ -369,22 +389,7 @@ app.delete("/api/sizes/delete/:id", (req, res) => {
     });
 });
 
-// ✅ เพิ่ม API สำหรับแอดมินสร้างผู้ใช้ใหม่
-app.post("/api/users/add", (req, res) => {
-    const { username, password, role_id } = req.body;
-    // ใช้ MD5 ให้เหมือนกับตอน Login นะครับ
-    const sql = "INSERT INTO users (username, password, role_id, created_at) VALUES (?, MD5(?), ?, NOW())";
-    db.query(sql, [username, password, role_id], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ message: "ชื่อผู้ใช้อาจซ้ำหรือข้อมูลไม่ถูกต้อง" });
-        }
-        res.json({ message: "เพิ่มผู้ใช้สำเร็จ" });
-    });
-});
-// ==========================================
 // 6. Start Server
-// ==========================================
 app.listen(5000, () => {
-    console.log("🚀 Server is back online with all fixed routes!");
+    console.log(" Server is running");
 });

@@ -27,7 +27,7 @@ export const CartProvider = ({ children }) => {
         );
       }
 
-      // ถ้ายังไม่มี ให้เพิ่มใหม่ (ส่งค่าให้ครบตามนี้)
+      // ถ้ายังไม่มี ให้เพิ่มใหม่ 
       return [
         ...prevCart,
         {

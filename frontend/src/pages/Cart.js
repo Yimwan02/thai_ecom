@@ -53,7 +53,7 @@ function Cart() {
 
               <div className="row justify-content-end mt-4">
                 <div className="col-md-4 d-grid gap-2">
-                  {/* ✅ ลิ้งไปหน้า Checkout ที่เพื่อนทำ */}
+                  {/* ลิ้งไปหน้า Checkout */}
                   <Link to="/checkout" className="btn-checkout text-decoration-none text-center p-2 rounded text-white" style={{backgroundColor: '#000033'}}>
                     ดำเนินการชำระเงิน
                   </Link>

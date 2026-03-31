@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 30, 2026 at 12:33 AM
+-- Generation Time: Mar 31, 2026 at 04:48 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -45,13 +45,7 @@ CREATE TABLE `orders` (
 INSERT INTO `orders` (`order_id`, `user_id`, `address`, `payment_method`, `total_amount`, `order_date`, `total_price`, `status`) VALUES
 (1, 1, NULL, NULL, NULL, '2026-03-21 21:34:50', 1580, 'paid'),
 (2, 1, NULL, NULL, NULL, '2026-03-30 00:43:52', 990, 'cancelled'),
-(3, 1, NULL, NULL, NULL, '2026-03-30 03:11:56', 990, 'cancelled'),
-(4, 6, 'หกดหดห3443', 'transfer', 990.00, '2026-03-30 04:42:58', 0, 'cancelled'),
-(5, 6, 'ดกหดหด', 'cod', 590.00, '2026-03-30 04:44:43', 0, 'cancelled'),
-(6, 6, 'หกกหกหก', 'transfer', 1290.00, '2026-03-30 04:45:34', 0, 'cancelled'),
-(7, 6, 'หกหก', 'transfer', 1580.00, '2026-03-30 04:59:15', 0, 'cancelled'),
-(8, 6, 'หกหก', 'transfer', 990.00, '2026-03-30 05:12:49', 0, 'cancelled'),
-(9, 6, 'เกเกกเ', 'transfer', 990.00, '2026-03-30 05:28:36', 0, 'cancelled');
+(3, 1, NULL, NULL, NULL, '2026-03-30 03:11:56', 990, 'cancelled');
 
 -- --------------------------------------------------------
 
@@ -75,14 +69,7 @@ INSERT INTO `order_details` (`detail_id`, `order_id`, `product_id`, `quantity`, 
 (1, 1, 1, 1, 990),
 (2, 1, 3, 1, 590),
 (3, 2, 2, 1, 990),
-(4, 3, 3, 1, 990),
-(5, 4, 3, 1, 990),
-(6, 5, 9, 1, 590),
-(7, 6, 6, 1, 1290),
-(8, 7, 3, 1, 990),
-(9, 7, 9, 1, 590),
-(10, 8, 8, 1, 990),
-(11, 9, 8, 1, 990);
+(4, 3, 3, 1, 990);
 
 -- --------------------------------------------------------
 
@@ -130,14 +117,12 @@ CREATE TABLE `product_size` (
 --
 
 INSERT INTO `product_size` (`product_size_id`, `product_size_name`) VALUES
+(1, 'S'),
 (2, 'M'),
 (3, 'L'),
 (4, 'XL'),
-(5, 'S'),
-(6, 'M'),
-(7, 'L'),
-(8, 'XL'),
-(9, '2XL');
+(5, '2XL'),
+(6, 'อื่นๆ');
 
 -- --------------------------------------------------------
 
@@ -201,8 +186,7 @@ INSERT INTO `users` (`user_id`, `username`, `password`, `role_id`, `created_at`)
 (1, 'admin_artty', '81dc9bdb52d04dc20036dbd8313ed055', 1, '2026-03-29 20:21:48'),
 (2, 'test_user', '81dc9bdb52d04dc20036dbd8313ed055', 2, '2026-03-29 20:21:48'),
 (3, 'admin', '81dc9bdb52d04dc20036dbd8313ed055', 1, '2026-03-29 20:21:48'),
-(5, 'aum', '81dc9bdb52d04dc20036dbd8313ed055', 2, '2026-03-29 20:21:48'),
-(6, 'artty', '81dc9bdb52d04dc20036dbd8313ed055', 2, '2026-03-29 21:08:57');
+(4, 'artty', '81dc9bdb52d04dc20036dbd8313ed055', 2, '2026-03-29 21:08:57');
 
 --
 -- Indexes for dumped tables
@@ -264,31 +248,31 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `order_details`
 --
 ALTER TABLE `order_details`
-  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `product_size`
 --
 ALTER TABLE `product_size`
-  MODIFY `product_size_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `product_size_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `product_type`
 --
 ALTER TABLE `product_type`
-  MODIFY `product_type_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `product_type_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -300,7 +284,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Constraints for dumped tables

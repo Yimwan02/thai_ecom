@@ -10,13 +10,13 @@ function Checkout() {
 
   const handleOrder = async () => {
     if (cart.length === 0) { alert("ไม่มีสินค้าในตะกร้า"); return; }
-    if (!address) { alert("กรอกที่อยู่จัดส่งด้วยครับ Artty"); return; }
+    if (!address) { alert("กรอกที่อยู่จัดส่งด้วยครับ"); return; }
 
     const userData = JSON.parse(localStorage.getItem("user"));
     const userId = userData ? userData.user_id : null;
 
     try {
-      // ✅ ลบ URL เดิมออกแล้วใช้ตัวนี้ครับ (เน้นว่าต้องไม่มี :1 หรือตัวแปรต่อท้าย)
+      //  ลบ URL เดิมออกแล้วใช้ตัวนี้ครับ (เน้นว่าต้องไม่มี :1 หรือตัวแปรต่อท้าย)
       const res = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,7 +46,7 @@ function Checkout() {
       }
     } catch (error) {
       console.error("Fetch Error:", error);
-      alert("เชื่อมต่อ Server ไม่ได้ครับ Artty");
+      alert("เชื่อมต่อ Server ไม่ได้");
     }
   };
 

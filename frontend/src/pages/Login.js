@@ -49,7 +49,7 @@ function Login() {
           </span>
         </p>
 
-        {/* 3. ช่องกรอกข้อมูลสไตล์ MU (มนและเทาอ่อน) */}
+        {/* 3. ช่องกรอกข้อมูล */}
         <div className="mb-3">
           <input
             className="form-control py-3 px-4 shadow-sm"
