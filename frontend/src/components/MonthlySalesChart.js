@@ -32,7 +32,7 @@ const BAR_COLORS = [
   "rgba(120, 120, 255, 0.7)",
   "rgba(180, 99, 255, 0.7)",
 ];
-
+//เก็บข้อมูลกราฟ ข้อมูลตาราง สถานะโหลด และเวลาอัปเดตล่าสุด
 function MonthlyProductSalesChart() {
   const [chartData, setChartData] = useState(null);
   const [summaryData, setSummaryData] = useState([]);
@@ -42,10 +42,10 @@ function MonthlyProductSalesChart() {
   const fetchData = async () => {
     try {
       const [monthlyRes, summaryRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/orders/stats/monthly-products"),
-        axios.get("http://localhost:5000/api/products/sales-summary")
+        axios.get("http://localhost:5000/api/orders/stats/monthly-products"), //ดึงข้อมูลกราฟรายเดือน
+        axios.get("http://localhost:5000/api/products/sales-summary") //ดึงข้อมูลสรุปยอดขายแยกตามสินค้า
       ]);
-
+      //เอาข้อมูลจาก backend มาเก็บใน state เพื่อเอาไปแสดงผล
       const monthlyData = monthlyRes.data || [];
       const salesSummary = summaryRes.data || [];
 
@@ -84,6 +84,7 @@ function MonthlyProductSalesChart() {
     return () => clearInterval(interval);
   }, []);
 
+  //คำนวณออกมาเป็น 1.จำนวนสินค้าในรายงาน 2.จำนวนชิ้นที่ขาย 3.ยอดขายรวม
   const totals = useMemo(() => {
     return summaryData.reduce(
       (acc, item) => {

@@ -11,6 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ตั้งค่า Static Folder สำหรับรูปภาพ
+//ทำให้ frontend เรียกรูปผ่าน URL แบบ http://localhost:5000/images/ชื่อไฟล์
 app.use("/images", express.static(path.join(__dirname, "public", "images")));
 
 // 1. Authentication & Users
@@ -107,6 +108,11 @@ app.get("/api/users/stats/monthly", (req, res) => {
 // 2. Special Reports & Stats 
 
 //  สรุปยอดขาย (Admin Dashboard)
+//สรุปยอดขายออกมาเป็น “ต่อสินค้า 1 รายการ”
+//จำนวนที่ขาย
+//ยอดรวม
+//จำนวนออเดอร์
+//วันที่ขายล่าสุด
 app.get("/api/products/sales-summary", (req, res) => {
     const sql = `
         SELECT
@@ -142,7 +148,7 @@ app.get("/api/products/size-counts", (req, res) => {
     });
 });
 
-//  กราฟยอดสั่งซื้อรายเดือนแยกตามสินค้า
+//  กราฟยอดสั่งซื้อรายเดือนแยกตามสินค้า ส่งข้อมูลยอดรวมรายเดือนให้หน้า report ไปสร้างกราฟ
 app.get("/api/orders/stats/monthly-products", (req, res) => {
     const sql = `
         SELECT MONTH(o.order_date) AS month, SUM(od.quantity) AS total_quantity 
@@ -159,7 +165,7 @@ app.get("/api/orders/stats/monthly-products", (req, res) => {
 
 // 3. Products Management
 
-//  ดึงสินค้าทั้งหมด
+//  ดึงสินค้าทั้งหมด ส่งรายการสินค้าทั้งหมดกลับไปหน้าแอดมิน พร้อมชื่อประเภทและชื่อไซส์
 app.get("/api/products", (req, res) => {
     const sql = `
         SELECT p.*, pt.product_type_name, s.product_size_name

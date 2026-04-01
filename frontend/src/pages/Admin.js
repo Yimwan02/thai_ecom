@@ -35,28 +35,29 @@ function Admin() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState(2);
 
-  // --- States ฟอร์มสินค้า ---
+  // --- States ฟอร์มสินค้า --- เก็บข้อมูลจากฟอร์มสินค้าและควบคุมโหมดเพิ่ม/แก้ไขสินค้า
   const [showProductForm, setShowProductForm] = useState(false);
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [productName, setProductName] = useState("");
-  const [productTypeId, setProductTypeId] = useState("");
-  const [productSizeId, setProductSizeId] = useState("");
-  const [productPrice, setProductPrice] = useState("");
-  const [productImage, setProductImage] = useState(null);
-  const [previewImage, setPreviewImage] = useState("");
+  const [editingProductId, setEditingProductId] = useState(null); //เช็คว่าตอนนี้กำลังแก้ไขสินค้าหรือเพิ่มใหม่
+  const [productName, setProductName] = useState(""); //ชื่อสินค้า
+  const [productTypeId, setProductTypeId] = useState(""); //ประเภทสินค้า
+  const [productSizeId, setProductSizeId] = useState(""); //ไซส์
+  const [productPrice, setProductPrice] = useState(""); //ราคา
+  const [productImage, setProductImage] = useState(null); //ไฟล์รูป
+  const [previewImage, setPreviewImage] = useState(""); //รูปตัวอย่างก่อนบันทึก
 
   // ==========================================
-  // 1. ฟังก์ชันดึงข้อมูล (Fetch)
+  // 1. ฟังก์ชันดึงข้อมูล (Fetch) API หลายตัวพร้อมกันเพื่อโหลดข้อมูลสินค้า ไซส์ และรายงานยอดขายเข้าหน้าแอดมิน
+  // หน้าที่โหลดข้อมูลที่เกี่ยวกับงานสินค้าแยกตามรายการ
   // ==========================================
   const fetchData = async () => {
     try {
       const [u, pt, p, s, ss, sc, chart] = await Promise.all([
         axios.get("http://localhost:5000/api/users"),
-        axios.get("http://localhost:5000/api/product-types"),
-        axios.get("http://localhost:5000/api/products"),
-        axios.get("http://localhost:5000/api/sizes"),
-        axios.get("http://localhost:5000/api/products/sales-summary"),
-        axios.get("http://localhost:5000/api/products/size-counts"),
+        axios.get("http://localhost:5000/api/product-types"), //ดึงรายการสินค้า
+        axios.get("http://localhost:5000/api/products"), //
+        axios.get("http://localhost:5000/api/sizes"), //ดึงไซส์
+        axios.get("http://localhost:5000/api/products/sales-summary"), //ดึงรายงานยอดขายสินค้าแยกตามรายการ
+        axios.get("http://localhost:5000/api/products/size-counts"), //ดึงสรุปจำนวนสินค้าแยกตามไซส์
         axios.get("http://localhost:5000/api/users/stats/monthly")
       ]);
       setUsers(u.data);
@@ -115,52 +116,60 @@ function Admin() {
     } catch (err) { alert("เปลี่ยน Role ไม่สำเร็จ"); }
   };
 
-  // 3. จัดการสินค้า (Product Logic)
+  // 3. จัดการสินค้า (Product Logic) ล้างค่าฟอร์มหลังบันทึกสำเร็จ หรือกดปิดฟอร์ม
 
   const resetProductForm = () => {
     setEditingProductId(null); setProductName(""); setProductTypeId("");
     setProductSizeId(""); setProductPrice(""); setProductImage(null);
     setPreviewImage(""); setShowProductForm(false);
   };
+  // ฟังก์ชันหลักของฟอร์มสินค้า ทำงานตอนกดบันทึก และจะตรวจสอบก่อนว่ากรอกข้อมูลครบหรือยัง
+  const handleSubmitProduct = async (e) => { //คือฟังก์ชันที่ทำงานตอนกด submit ฟอร์ม
+    e.preventDefault(); //กันไม่ให้หน้า reload
+    if (!productName || !productTypeId || !productSizeId || !productPrice) return alert("กรอกข้อมูลให้ครบ"); //ตรวจว่ากรอกข้อมูลครบไหม
 
-  const handleSubmitProduct = async (e) => {
-    e.preventDefault();
-    if (!productName || !productTypeId || !productSizeId || !productPrice) return alert("กรอกข้อมูลให้ครบ");
-
-    const formData = new FormData();
+    const formData = new FormData(); //มีการส่ง ไฟล์รูปสินค้า ไปพร้อมข้อมูลข้อความถ้าใช้ JSON ธรรมดาจะส่งไฟล์ไม่ได้
+    //เอาค่าจากฟอร์มใส่ลงไป
     formData.append("product_name", productName);
     formData.append("product_type_id", productTypeId);
     formData.append("product_size_id", productSizeId);
     formData.append("price", productPrice);
     if (productImage) formData.append("product_img", productImage);
 
+    //ส่งข้อมูลไป backend เพื่อ “เพิ่มสินค้า” หรือ “แก้ไขสินค้า”
+    //ถ้ามี editingProductId แปลว่ากำลัง แก้ไขสินค้า
+    //ถ้าไม่มี editingProductId แปลว่ากำลัง เพิ่มสินค้าใหม่
     try {
-      if (editingProductId) {
+      if (editingProductId) {//ตัวแปร editingProductId เป็นตัวตัดสินว่า ตอนนี้กำลังเพิ่มสินค้าหรือแก้ไขสินค้า ถ้ามี id จะส่งไป endpoint update แต่ถ้าไม่มีจะส่งไป endpoint add
         await axios.put(`http://localhost:5000/api/products/update/${editingProductId}`, formData);
       } else {
         await axios.post("http://localhost:5000/api/products/add", formData);
       }
+      //หลังบันทึกเสร็จ
+      //1.แจ้งผล
+      //2.ล้างฟอร์ม
+      //3.โหลดข้อมูลสินค้าใหม่มาแสดง
       alert("บันทึกสินค้าสำเร็จ");
       resetProductForm();
       fetchData();
     } catch (err) { alert("บันทึกไม่สำเร็จ"); }
-  };
+  }; 
 
   const handleDeleteProduct = async (id) => {
     // 1. ถามยืนยันก่อนลบ (เพื่อความปลอดภัย)
     if (!window.confirm("ยืนยันการลบสินค้าชิ้นนี้?")) return;
 
     try {
-      // 2. ส่ง Request ไปที่ Backend
-      // เช็ค URL ให้ตรงกับที่ Backend ตั้งไว้นะครับ (เช่น /api/products/delete/9)
+      // 2.ส่ง Request ไปที่ Backend
+      // เช็ค URL ให้ตรงกับที่ Backend ตั้งไว้ (เช่น /api/products/delete/9)
       await axios.delete(`http://localhost:5000/api/products/delete/${id}`);
 
-      // 3. ถ้าลบสำเร็จ (Success)
+      // 3.ถ้าลบสำเร็จ (Success)
       alert("ลบสินค้าเรียบร้อยแล้ว!");
       fetchData(); // โหลดรายการสินค้าใหม่มาแสดง
 
     } catch (err) {
-      // 4. 🔥 จุดสำคัญ: ส่วนดักจับ Error ไม่ให้หน้าจอแดง
+      // 4.ส่วนดักจับ Error ไม่ให้หน้าจอแดง
       // เมื่อเกิด Error 500 (เช่น ติด Foreign Key ใน DB) มันจะวิ่งมาที่นี่ทันที
 
       console.error("Log ไว้ดูสาเหตุ:", err);
@@ -251,7 +260,7 @@ function Admin() {
               <div className="card p-4 shadow-sm border-0 mb-4 bg-white">
                 <h5 className="mb-3 text-primary">{editingProductId ? `แก้ไขสินค้า ID: ${editingProductId}` : "เพิ่มสินค้าใหม่"}</h5>
                 <form onSubmit={handleSubmitProduct} className="row g-3">
-                  <div className="col-md-6"><label className="form-label">ชื่อสินค้า</label><input type="text" className="form-control" value={productName} onChange={(e) => setProductName(e.target.value)} /></div>
+                  <div className="col-md-6"><label className="form-label">ชื่อสินค้า</label><input type="text" className="form-control" value={productName} onChange={(e) => setProductName(e.target.value)} /></div> 
                   <div className="col-md-3"><label className="form-label">ประเภท</label>
                     <select className="form-select" value={productTypeId} onChange={(e) => setProductTypeId(e.target.value)}>
                       <option value="">-- เลือกประเภท --</option>

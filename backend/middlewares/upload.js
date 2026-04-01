@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// โฟลเดอร์เก็บรูปจริง
+// โฟลเดอร์เก็บรูปจริง กำหนดว่ารูปสินค้าจะถูกเก็บในโฟลเดอร์ไหน
 const imageDir = path.join(__dirname, "../public/images");
 
 // ถ้ายังไม่มีโฟลเดอร์ images ให้สร้างขึ้นมาอัตโนมัติ
